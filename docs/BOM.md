@@ -21,20 +21,26 @@ availability, footprint, and the electrical notes in [`POWER.md`](POWER.md) /
 | Ref | Qty | Part | Notes |
 |-----|----:|------|-------|
 | J2, J3 | 2 | **U.FL / IPEX SMT** receptacle | #1 GNSS, #2 900 MHz |
+| C34, C35, C44 | 3 | 100 pF RF DC-block | series in RF paths |
+| RN1 (R30–R32) | 0–3 | π-pad attenuator (0402) | DNP default; set MM8108→E21 drive (B3) |
+| D30 | 0–1 | low-C RF ESD clamp | at U.FL #2 |
 | FL1 | 0–1 | GNSS SAW/bandpass filter | add if PA leakage desenses GNSS |
-| R(pad) | 0–n | RF attenuator pad (0201/0402) | set MM8108→E21 drive level if needed |
-| L_bias | 0–1 | bias-tee inductor/ferrite + cap | active GNSS antenna feed |
-| — | — | 50 Ω matching components (TBD) | per MM8108 ref design + E21 ports |
+| L40, R44 | 0–2 | bias inductor (27–68 nH) + 10 Ω | active GNSS antenna via VCC_RF |
+| — | — | 50 Ω matching (TBD) | per MM8108 ref design + E21 ports |
 
 ## Connectors / power
 
 | Ref | Qty | Part | Notes |
 |-----|----:|------|-------|
 | J1  | 1 | **2×20 (40-pin) female header**, 2.54 mm | mates to Pi Zero 2 W; std or stacking height (see MECHANICAL) |
-| C_bulk | 1–2 | 100–220 µF low-ESR | VPA bulk for TX bursts |
-| L_bb | 1 | buck-boost inductor | per TPS63802 datasheet |
-| L_3v3 | 0–1 | buck inductor | if U5 is a buck |
-| C/R passives | many | 0402/0603 | decoupling, FB dividers, pulldowns, etc. |
+| C7/C30 | 1–2 | 100–220 µF low-ESR | VPA bulk for TX bursts |
+| L1 | 1 | 1.0 µH buck-boost inductor | per TPS63802 datasheet |
+| L2 | 0–1 | 2.2 µH buck inductor | if U5 is a buck |
+| FB1 | 1 | ferrite ~600 Ω@100 MHz | +3V3 → +3V3_GNSS |
+| R10–R14, R20–R52 | many | 0402 1% | FB dividers, SPI term, pulls, pulldowns |
+| C1–C50 | many | 0402/0603 + bulk | decoupling per docs/SCHEMATIC.md |
+| D1 | 0–1 | SMAJ5.0A TVS | 5 V input protection |
+| JP1 | 1 | EEPROM WP jumper | default = write-protected |
 
 ## Mechanical
 

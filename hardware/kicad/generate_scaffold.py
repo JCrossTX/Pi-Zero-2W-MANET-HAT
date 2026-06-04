@@ -129,34 +129,41 @@ def build_pcb():
 # --------------------------------------------------------------------------- #
 SHEETS = [
     ("Power", "power.kicad_sch",
-     "POWER\\n5V (hdr) -> buck-boost -> VPA (E21 PA rail, verify ~5.0V)\\n"
-     "5V (hdr) -> buck/LDO -> +3V3 (MM8108 IO + NEO-M9N)\\n"
-     "Bulk caps at VPA for TX bursts. 3V3_PI = reference only.",
-     ["+5V", "GND", "VPA", "+3V3", "3V3_PI"]),
+     "POWER  (see docs/SCHEMATIC.md S1)\\n"
+     "5V (hdr) -> U4 buck-boost (TPS63802) -> VPA (E21 rail, verify ~5.0V)\\n"
+     "5V (hdr) -> U5 buck (TLV62569) -> +3V3 ; FB1 ferrite -> +3V3_GNSS\\n"
+     "VPA bulk C7 100-220uF for TX bursts. 3V3_PI = ref + EEPROM only.",
+     "Refdes: U4,U5 regs; L1,L2; C1-C10 dec/bulk; FB1; R10-R14 FB div; D1 TVS",
+     ["+5V", "GND", "VPA", "+3V3", "+3V3_GNSS", "3V3_PI"]),
     ("HaLow_Radio_MM8108", "halow_radio.kicad_sch",
-     "MM8108 Wi-Fi HaLow radio (SPI host, ext-FEM RF).\\n"
+     "MM8108 Wi-Fi HaLow radio U1 (SPI host, ext-FEM RF).\\n"
      "OpenMANET pinout: CS0=GPIO8, RST=GPIO17, PWR=GPIO23/24, IRQ=GPIO5.\\n"
      "RF_900 -> external E21 FEM. FEM_TX/FEM_RX drive E21 T/R.\\n"
      "Detailed pinout/power-seq are NDA -> fill from vendor ref design.",
+     "Refdes: U1 MM8108; Y1 clk; R20-R23 SPI term; R24/R25 pulls; dec array",
      ["SPI_MOSI", "SPI_MISO", "SPI_SCLK", "SPI_CS_MM", "MM_IRQ",
       "MM_RESET_N", "MM_PWR1", "MM_PWR2", "+3V3", "GND",
       "RF_900", "FEM_TX", "FEM_RX"]),
     ("PA_Frontend_E21", "pa_frontend.kicad_sch",
-     "E21-900G30S PA/LNA front-end (30 dBm, 850-931 MHz).\\n"
-     "RF_900 (from MM8108, add pad if over-driven) -> RFI; RFO -> U.FL2.\\n"
-     "TXEN/RXEN from MM8108 FEM ctrl (never both high). VPA powered.\\n"
-     "FEM_*_FB = DNP Pi-GPIO fallback only.",
+     "E21-900G30S PA/LNA front-end U2 (30 dBm, 850-931 MHz).\\n"
+     "RF_900 -> C34 -> RN1 pad (DNP) -> RFI ; RFO -> C35 -> J3 U.FL2.\\n"
+     "TXEN/RXEN from MM8108 FEM ctrl, R33/R34 pulldown=Shutdown default.\\n"
+     "FEM_*_FB via R35/R36 (DNP 0R) = Pi-GPIO fallback only.",
+     "Refdes: U2 E21; J3 U.FL; C30-C35; RN1 atten pad; R33-R36; D30 ESD",
      ["RF_900", "ANT_900", "FEM_TX", "FEM_RX", "VPA", "GND",
       "FEM_TXEN_FB", "FEM_RXEN_FB"]),
     ("GNSS_NEO_M9N", "gnss.kicad_sch",
-     "u-blox NEO-M9N GNSS. UART0 + 1PPS (GPIO18). I2C alt.\\n"
-     "RF_GNSS <- U.FL1 (optional active-antenna bias-tee).\\n"
-     "Keep RF input away from PA + buck-boost switch node.",
+     "u-blox NEO-M9N U3. UART0 + 1PPS (GPIO18). I2C alt.\\n"
+     "RF_GNSS <- J2 U.FL1 -> C44 -> RF_IN. VCC_RF -> L40 bias (active ant).\\n"
+     "VCC via FB1 -> +3V3_GNSS. Keep RF away from PA + buck switch node.",
+     "Refdes: U3 NEO-M9N; J2 U.FL; L40/R44 bias; C40-C44; R41-R43 pulls",
      ["GNSS_RXD", "GNSS_TXD", "GNSS_PPS", "GNSS_SDA", "GNSS_SCL",
-      "GNSS_RESET_N", "GNSS_EXTINT", "RF_GNSS", "+3V3", "GND"]),
+      "GNSS_RESET_N", "GNSS_EXTINT", "RF_GNSS", "ANT_BIAS", "+3V3_GNSS", "GND"]),
     ("Header_EEPROM", "header_eeprom.kicad_sch",
-     "40-pin female header (J1) + HAT ID EEPROM (24Cxx on ID_SD/ID_SC).\\n"
+     "40-pin female header J1 + HAT ID EEPROM U6 (24Cxx on ID_SD/ID_SC).\\n"
+     "U6 VCC = 3V3_PI (Pi 3V3, pin1) so it reads at boot. WP=protected default.\\n"
      "All header nets land here. See docs/INTERFACES.md for the full map.",
+     "Refdes: J1 2x20 hdr; U6 24Cxx; R50/R51 I2C pulls; R52 WP; JP1; C50",
      ["+5V", "GND", "3V3_PI", "ID_SD", "ID_SC",
       "SPI_MOSI", "SPI_MISO", "SPI_SCLK", "SPI_CS_MM",
       "MM_IRQ", "MM_RESET_N", "MM_PWR1", "MM_PWR2",
@@ -165,7 +172,7 @@ SHEETS = [
 ]
 
 
-def build_subsheet(title, note, nets):
+def build_subsheet(title, note, refdes, nets):
     fid = u()
     L = []
     a = L.append
@@ -180,6 +187,8 @@ def build_subsheet(title, note, nets):
       f'(effects (font (size 2 2) (thickness 0.3)) (justify left top)) (uuid "{u()}"))')
     a(f'\t(text "{note}" (exclude_from_sim no) (at 20 22 0) '
       f'(effects (font (size 1.27 1.27)) (justify left top)) (uuid "{u()}"))')
+    a(f'\t(text "{refdes}" (exclude_from_sim no) (at 20 34 0) '
+      f'(effects (font (size 1.0 1.0)) (justify left top)) (uuid "{u()}"))')
     # lay out global labels in two columns
     x0, y0, dy = 40, 50, 6
     for i, net in enumerate(nets):
@@ -213,7 +222,7 @@ def build_root(sheet_meta):
     # place hierarchical sheet boxes
     positions = [(30, 40), (95, 40), (160, 40), (30, 95), (95, 95)]
     page = 2
-    for (name, fname, _note, _nets), (sx, sy) in zip(sheet_meta, positions):
+    for (name, fname, _note, _rd, _nets), (sx, sy) in zip(sheet_meta, positions):
         suid = u()
         a("\t(sheet")
         a(f"\t\t(at {sx} {sy})")
@@ -247,8 +256,8 @@ def build_root(sheet_meta):
 def main():
     with open(os.path.join(HERE, f"{PROJECT}.kicad_pcb"), "w") as f:
         f.write(build_pcb())
-    for name, fname, note, nets in SHEETS:
-        _, content = build_subsheet(name, note, nets)
+    for name, fname, note, refdes, nets in SHEETS:
+        _, content = build_subsheet(name, note, refdes, nets)
         with open(os.path.join(HERE, fname), "w") as f:
             f.write(content)
     with open(os.path.join(HERE, f"{PROJECT}.kicad_sch"), "w") as f:

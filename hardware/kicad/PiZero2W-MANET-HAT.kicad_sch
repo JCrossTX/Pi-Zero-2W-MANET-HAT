@@ -2,10 +2,10 @@
 	(version 20260306)
 	(generator "eeschema")
 	(generator_version "10.0")
-	(uuid "dc89a8ef-cc67-4fb0-8f80-f2137ad77a81")
+	(uuid "3692a164-a15a-411e-a580-4d3d4c06973b")
 	(paper "A4")
 	(lib_symbols)
-	(text "Pi Zero 2W MANET HAT - root sheet\nHaLow (MM8108/SPI, OpenMANET-compatible) + E21 1W PA + NEO-M9N GNSS.\nSee docs/ for full design. Sub-sheets carry named nets; add symbols next." (exclude_from_sim no) (at 20 12 0) (effects (font (size 1.5 1.5)) (justify left top)) (uuid "f753b28a-0141-43a6-a944-51a5d4036c7a"))
+	(text "Pi Zero 2W MANET HAT - root sheet\nHaLow (MM8108/SPI, OpenMANET-compatible) + E21 1W PA + NEO-M9N GNSS.\nSee docs/ for full design. Sub-sheets carry named nets; add symbols next." (exclude_from_sim no) (at 20 12 0) (effects (font (size 1.5 1.5)) (justify left top)) (uuid "a5c735b7-6bf0-413e-a646-cbebf4a67cc4"))
 	(sheet
 		(at 30 40)
 		(size 55 35)
@@ -16,12 +16,12 @@
 		(fields_autoplaced yes)
 		(stroke (width 0.1524) (type solid))
 		(fill (color 0 0 0 0.0000))
-		(uuid "c920b6ea-f0f1-474c-8b24-52bd69dadc37")
+		(uuid "fb4c5686-e45f-4e22-a208-ab1c3a952569")
 		(property "Sheetname" "Power" (at 30 39.36 0) (effects (font (size 1.27 1.27)) (justify left bottom)))
 		(property "Sheetfile" "power.kicad_sch" (at 30 75.5 0) (effects (font (size 1.27 1.27)) (justify left top)))
 		(instances
 			(project "PiZero2W-MANET-HAT"
-				(path "/dc89a8ef-cc67-4fb0-8f80-f2137ad77a81" (page "2"))
+				(path "/3692a164-a15a-411e-a580-4d3d4c06973b" (page "2"))
 			)
 		)
 	)
@@ -35,12 +35,12 @@
 		(fields_autoplaced yes)
 		(stroke (width 0.1524) (type solid))
 		(fill (color 0 0 0 0.0000))
-		(uuid "5cd77402-44d5-4e96-9eb4-17175298a813")
+		(uuid "80870e35-9cce-4dfd-a4c5-335b846c605b")
 		(property "Sheetname" "HaLow_Radio_MM8108" (at 95 39.36 0) (effects (font (size 1.27 1.27)) (justify left bottom)))
 		(property "Sheetfile" "halow_radio.kicad_sch" (at 95 75.5 0) (effects (font (size 1.27 1.27)) (justify left top)))
 		(instances
 			(project "PiZero2W-MANET-HAT"
-				(path "/dc89a8ef-cc67-4fb0-8f80-f2137ad77a81" (page "3"))
+				(path "/3692a164-a15a-411e-a580-4d3d4c06973b" (page "3"))
 			)
 		)
 	)
@@ -54,12 +54,12 @@
 		(fields_autoplaced yes)
 		(stroke (width 0.1524) (type solid))
 		(fill (color 0 0 0 0.0000))
-		(uuid "de45ed51-5c39-4e11-9a0c-3e99d6bee045")
+		(uuid "d7d1b910-ae4e-4f92-b3d9-518788df1fa1")
 		(property "Sheetname" "PA_Frontend_E21" (at 160 39.36 0) (effects (font (size 1.27 1.27)) (justify left bottom)))
 		(property "Sheetfile" "pa_frontend.kicad_sch" (at 160 75.5 0) (effects (font (size 1.27 1.27)) (justify left top)))
 		(instances
 			(project "PiZero2W-MANET-HAT"
-				(path "/dc89a8ef-cc67-4fb0-8f80-f2137ad77a81" (page "4"))
+				(path "/3692a164-a15a-411e-a580-4d3d4c06973b" (page "4"))
 			)
 		)
 	)
@@ -73,12 +73,12 @@
 		(fields_autoplaced yes)
 		(stroke (width 0.1524) (type solid))
 		(fill (color 0 0 0 0.0000))
-		(uuid "3c09e655-6ab2-4dd5-ac49-677084a12d8f")
+		(uuid "78c59a04-c5bf-4a83-9e02-16413d14b77d")
 		(property "Sheetname" "GNSS_NEO_M9N" (at 30 94.36 0) (effects (font (size 1.27 1.27)) (justify left bottom)))
 		(property "Sheetfile" "gnss.kicad_sch" (at 30 130.5 0) (effects (font (size 1.27 1.27)) (justify left top)))
 		(instances
 			(project "PiZero2W-MANET-HAT"
-				(path "/dc89a8ef-cc67-4fb0-8f80-f2137ad77a81" (page "5"))
+				(path "/3692a164-a15a-411e-a580-4d3d4c06973b" (page "5"))
 			)
 		)
 	)
@@ -92,12 +92,12 @@
 		(fields_autoplaced yes)
 		(stroke (width 0.1524) (type solid))
 		(fill (color 0 0 0 0.0000))
-		(uuid "f15ad131-0efc-4378-881f-6ef08dc66b23")
+		(uuid "52e568d3-3134-4d60-b172-1a427278e64b")
 		(property "Sheetname" "Header_EEPROM" (at 95 94.36 0) (effects (font (size 1.27 1.27)) (justify left bottom)))
 		(property "Sheetfile" "header_eeprom.kicad_sch" (at 95 130.5 0) (effects (font (size 1.27 1.27)) (justify left top)))
 		(instances
 			(project "PiZero2W-MANET-HAT"
-				(path "/dc89a8ef-cc67-4fb0-8f80-f2137ad77a81" (page "6"))
+				(path "/3692a164-a15a-411e-a580-4d3d4c06973b" (page "6"))
 			)
 		)
 	)

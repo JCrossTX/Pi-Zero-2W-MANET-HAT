@@ -36,10 +36,12 @@ on a board the same perimeter (65 × 30 mm) as the Pi Zero 2 W and powered from 
 docs/                 Engineer-ready design package
   DESIGN.md           Architecture + block diagram
   INTERFACES.md       40-pin header pin map + signal assignments
+  SCHEMATIC.md        Component-level subcircuits (refdes + values + nets)
   POWER.md            Power tree, budget, regulator selection, decoupling
   RF.md               RF chain, FEM switching, matching, antennas
   MECHANICAL.md       Outline, mounting holes, two-sided placement, clearances
   BOM.md              Bill of materials (MPNs)
+  BRINGUP.md          Stage-gated power-on & test plan
   DECISIONS.md        Design decision log + open risks
 hardware/
   kicad/              KiCad 10 project scaffold (project, board outline, sheets)

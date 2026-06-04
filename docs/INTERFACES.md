@@ -69,7 +69,7 @@ OpenMANET-claimed GPIOs so they don't collide with the stock overlay.
 | SPI0   | spi0.0        | MOSI 19, MISO 21, SCLK 23, CE0 24    | MM8108   |
 | UART0  | ttyAMA0       | TXD 8, RXD 10                        | NEO-M9N  |
 | I²C1   | i2c-1         | SDA 3, SCL 5                         | NEO-M9N (alt) |
-| I²C0   | i2c-0 (ID)    | ID_SD 27, ID_SC 28                   | ID EEPROM |
+| I²C0   | i2c-0 (ID)    | ID_SD 27, ID_SC 28                   | ID EEPROM (VCC = Pi 3V3, pin 1) |
 | GPIO   | —             | IRQ 29, RESET 11, PWR 16/18 (MM8108); PPS 12 (GNSS) | per overlay |
 
 ## 3. MM8108 ↔ OpenMANET overlay mapping
