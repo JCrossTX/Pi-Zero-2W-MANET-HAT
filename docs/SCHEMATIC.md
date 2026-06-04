@@ -19,7 +19,7 @@ datasheet — confirm before committing. Conventions: `R` 0402 1%, `C` 0402 X7R
   header `+5V` and the buck-boost input, so the VPA bulk doesn't brown out the Pi
   at plug-in. EN = on after a small RC delay (or tied on). (Necessary item N4.)
 
-### 1.2 Buck-boost → `VPA` (E21 PA rail)
+### 1.2 Buck-boost → `VPA` (E21 PA rail) — **Variant B only (DNP in default build)**
 - `U4` = **TI TPS63802** (alt **TPS63070** for more headroom). Topology: 5 V in,
   regulated **~5.0 V** out (set per E21 datasheet — see [`DECISIONS.md`](DECISIONS.md) B4).
 - Feedback divider (Vout = Vref·(1 + R_top/R_bot)):
@@ -84,7 +84,14 @@ Per the module datasheet ([`../hardware/MM8108-MF15457_Data_Sheet.pdf`](../hardw
 
 ---
 
-## 3. 900 MHz front-end — E21-900G30S (`pa_frontend.kicad_sch`)
+## 3. 900 MHz front-end — E21-900G30S (`pa_frontend.kicad_sch`) — **Variant B (DNP default)**
+
+> **Default build (Variant A) depopulates this whole section.** The module `ANT`
+> routes straight to U.FL #2 through the RF bypass **`C_BYP`** (a 50 Ω series-cap /
+> RF jumper across the E21 `PIN`↔`ANT` lands), giving OpenMANET's ~27 dBm with no
+> PA. Populate the E21 (+ VPA buck-boost + LPF + T/R) and remove `C_BYP` only for
+> the extended-range Variant B. See [`DECISIONS.md`](DECISIONS.md) §C.
+
 
 E21 pins (datasheet [`../hardware/E21-900G30S_UserManual_EN_v1.0.pdf`](../hardware/E21-900G30S_UserManual_EN_v1.0.pdf)):
 1 `VCC` (4.75–5.5 V, 5 V rec); 2 `GND`; 3 `TX_EN`; 4 `RX_EN`; 5 `GND`; **6 `PIN`

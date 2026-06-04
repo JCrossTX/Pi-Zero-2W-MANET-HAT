@@ -67,17 +67,40 @@ and [`../firmware/openmanet/README.md`](../firmware/openmanet/README.md).
 | B2 | **Module has integrated PA + single ANT, no FEM tap** | The external E21 cannot tap a pre-PA RF port; it must cascade off the module's +22…+25.5 dBm ANT output | Cascade module ANT → pad → E21 `PIN`; accept ~+5–8 dB net system gain; **recertify** end product at +30 dBm |
 | B3 | **MM8108 → E21 drive level** — refined | Module +22…+25.5 dBm vs E21 +20 dBm target | Add a **fixed ~3–5 dB pad** (RN1) at E21 `PIN`; confirm against hottest BW/MCS so E21 input stays ≤ spec |
 | B4 | **VPA = 5.0 V** — RESOLVED | E21 needs 4.75–5.25 V, ~620 mA TX | Buck-boost output = **5.0 V**; bulk for the 620 mA burst |
-| B5 | **E21 T/R control — only via custom BCF; not turnkey on MF15457** | Function of chip GPIOs is set by Morse **BCF**/firmware; mapping the internal TXRX switch to a GPIO is **not a shipping feature** on MF15457 (Morse planned a separate ext-FEM variant), and a builder hit a low-RX-rate issue with MM8108+ext-PA. See [`FIRMWARE_PA.md`](FIRMWARE_PA.md). | Requires a **custom BCF** exposing a FEM/TXRX GPIO → E21 TX_EN/RX_EN; RF-sense auto-T/R as fallback; Pi GPIO bring-up only. **Also weigh dropping the PA** (B10) |
-| B10 | **PA value vs OpenMANET's ~27 dBm BCF** | OpenMANET's BCF already yields ~27 dBm from the bare module; E21 adds only ~3 dB for big cost (T/R support risk, RX-rate gotcha, ~620 mA+heat, area, recert) | **Decision pending** — keep / drop / make E21 DNP-optional (see chat) |
+| B5 | **E21 T/R control** (Variant B only) | Only relevant when the E21 is populated | Custom BCF exposing a FEM/TXRX GPIO → E21 TX_EN/RX_EN; not needed for the default build |
+| B10 | **E21 kept as DNP/optional** — RESOLVED | Ground/handheld/vehicle (NLOS) deployment: +3 dB buys only ~20 % range vs ~620 mA + heat + recert + RX-rate risk | **Default build = module-only (~27 dBm BCF, low power, certified path)**; E21 + buck-boost + LPF + T/R are a DNP **Variant B** with an RF bypass — see §C |
 | B6 | 900 MHz PA ↔ GNSS coexistence | +30 dBm beside a GNSS RX on 65×30 mm | Opposite-end U.FL, ground fencing, **RF shield cans**, optional GNSS pre-filter; validate C/N₀ with PA keyed |
 | B7 | Bottom-side clearance to Pi | Pi connectors/SD/camera/RF-can | Build keepouts from the Pi Zero 2 W DXF; taller header/standoffs if needed |
 | B8 | Header position exactness | Must mate with Pi Zero 2 W | Place real 2×20 footprint at DXF-exact location (scaffold = nominal `VERIFY`) |
 | B9 | Upstream 5 V capacity, **cert**, inrush | PA+module+Pi current; +30 dBm power/duty limits; bulk-cap inrush can brown out the Pi | Spec ≥3 A supply; **soft-start load switch** on +5 V; **recertify** end product (FCC 15.247 / ETSI EN 300 220) |
 
-## C. Suggested implementation order
-1. Resolve **B1/B2** (MM8108 SoC-vs-module + ext-FEM) — gates the whole schematic.
-2. Lock **VPA (B4)** and finalize the power schematic.
+## C. Assembly variants (single PCB, two BOM builds)
+
+One board layout; the E21 high-power path is depopulated by default.
+
+| Block | Variant A — **Standard (default)** | Variant B — **Extended-range (optional)** |
+|-------|-----------------------------------|-------------------------------------------|
+| TX power | module **~27 dBm** (OpenMANET BCF) | E21 **~30 dBm** |
+| E21 (U2), drive pad (RN1), 900 MHz LPF (FL2) | **DNP** | populate |
+| Buck-boost VPA (U4) + bulk | **DNP** | populate |
+| Module ANT → U.FL #2 | **`C_BYP` RF bypass populated** (ANT straight to U.FL) | bypass removed; routed through E21 |
+| PA T/R (module GPIO → TX_EN/RX_EN) | unused (pull-downs hold E21 off) | custom BCF FEM GPIO (B5) |
+| Power | 3V3 only (module+GNSS+RTC) — **low power, good for battery handhelds** | + VPA path (~620 mA TX) |
+| Certification | module modular cert (w/ chosen antenna) | **end-product recert at +30 dBm** |
+
+Rationale: the chosen deployment is **ground / handheld / vehicle (NLOS)**, where
++3 dB ≈ +20 % range ([`LINK_BUDGET.md`](LINK_BUDGET.md)) doesn't justify the
+power/heat/cert/RX-risk by default. Variant B stays a no-respin option for fixed or
+elevated LoS nodes.
+
+> The RF bypass should be a true 50 Ω hand-off (series cap / RF jumper across the
+> E21 in/out lands), not a DC-only 0 Ω, so the depopulated path stays matched.
+
+## D. Suggested implementation order
+1. **B1/B2 resolved** (MF15457 module). Build the **Variant A** default first.
+2. Finalize the 3V3 power + module + GNSS + RTC schematic (no VPA needed for A).
 3. Draw schematics over the scaffold sheets; pull real symbols/footprints.
 4. Place to the [`MECHANICAL.md`](MECHANICAL.md) two-sided plan; build Pi keepouts.
-5. Route 50 Ω RF first, then power, then digital; flood ground; fence RF sections.
-6. RF bring-up: drive level (**B3**), T/R timing (**B5**), GNSS coexistence (**B6**).
+   Reserve the E21/VPA area + bypass so Variant B needs no respin.
+5. Route 50 Ω RF first (incl. the bypass hand-off), then power, then digital.
+6. Variant-B bring-up only: drive level (**B3**), BCF T/R (**B5**), coexistence (**B6**).

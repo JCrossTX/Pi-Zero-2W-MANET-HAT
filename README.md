@@ -12,10 +12,19 @@ on a board the same perimeter (65 × 30 mm) as the Pi Zero 2 W and powered from 
 | Block            | Part                  | Host interface (40-pin)            | Antenna        |
 |------------------|-----------------------|------------------------------------|----------------|
 | HaLow radio      | Morse Micro **MM8108**| **SPI0** + IRQ/RESET/wake          | via PA → U.FL  |
-| RF front-end (PA/LNA) | EBYTE **E21-900G30S** (1 W, 850–931 MHz) | TX/RX control (from MM8108 FEM ctrl) | **U.FL #2 (900 MHz)** |
+| RF front-end (PA/LNA) — **optional Variant B** | EBYTE **E21-900G30S** (1 W) | BCF FEM GPIO (Variant B only) | **U.FL #2 (900 MHz)** |
 | GNSS             | u-blox **NEO-M9N**    | **UART0** + **PPS** (I²C alternate)| **U.FL #1 (GNSS)** |
 | PA power         | Buck-boost from header **5 V** | —                         | —              |
 | HAT ID           | 24Cxx EEPROM          | **ID_SD / ID_SC** (pins 27/28)     | —              |
+
+> **Two build variants on one board** (see [`docs/DECISIONS.md`](docs/DECISIONS.md) §C):
+> **Variant A (default)** ships module-only at **~27 dBm** (OpenMANET BCF) — low
+> power, certified path, ideal for ground/handheld/vehicle nodes; the E21 PA,
+> buck-boost and LPF are **depopulated** and an RF bypass carries the module ANT
+> to U.FL #2. **Variant B (optional)** populates the E21 for **+30 dBm** extended
+> range (fixed/elevated LoS nodes) — needs custom-BCF T/R control + recert. The
+> ~3 dB only buys ~20 % range in NLOS, so it's off by default
+> ([`docs/LINK_BUDGET.md`](docs/LINK_BUDGET.md)).
 
 > **OpenMANET-compatible.** The MM8108 SPI + control GPIOs match the OpenMANET
 > Pi Zero 2 W SPI firmware variant (CS0=GPIO8, RESET=GPIO17, power=GPIO23/24,
@@ -40,10 +49,12 @@ docs/                 Engineer-ready design package
   POWER.md            Power tree, budget, regulator selection, decoupling
   RF.md               RF chain, FEM switching, matching, antennas
   MECHANICAL.md       Outline, mounting holes, two-sided placement, clearances
-  BOM.md              Bill of materials (MPNs)
+  BOM.md              Bill of materials (MPNs) + Variant A/B builds
   COMPONENTS_GAP.md   Datasheet-grounded gap analysis (what else the PCB needs)
+  LINK_BUDGET.md      Range & throughput: module-only vs +E21
+  FIRMWARE_PA.md      OpenMANET/Morse firmware external-PA findings
   BRINGUP.md          Stage-gated power-on & test plan
-  DECISIONS.md        Design decision log + open risks
+  DECISIONS.md        Design decision log + open risks + Variant A/B
 hardware/             Vendor datasheets (MM8108-MF15457, E21, NEO-M9N)
 hardware/
   kicad/              KiCad 10 project scaffold (project, board outline, sheets)

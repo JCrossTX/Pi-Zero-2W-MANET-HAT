@@ -103,7 +103,7 @@ def build_pcb():
         ("MANET HAT - Pi Zero 2W (TOP)", 18.0, 11.5, 1.0),
         ("NEO-M9N", 10.5, 16.0, 0.9),
         ("U.FL1 GNSS", 2.0, 22.0, 0.7),
-        ("E21-900G30S PA 1W", 38.0, 16.0, 0.9),
+        ("E21 PA 1W (Variant B / DNP)", 36.0, 16.0, 0.8),
         ("U.FL2 900MHz", 50.0, 22.0, 0.7),
         ("4-layer recommended", 19.0, 26.5, 0.7),
     ]
@@ -130,8 +130,8 @@ def build_pcb():
 SHEETS = [
     ("Power", "power.kicad_sch",
      "POWER + PWR MGMT (see docs/SCHEMATIC.md S1,S6,S7)\\n"
-     "5V (hdr) -> U10 inrush switch -> U4 buck-boost -> VPA=5.0V (E21)\\n"
-     "+5V_SW -> U5 buck -> +3V3 ; U12 load sw -> +3V3_RAD (module)\\n"
+     "5V -> U10 inrush sw -> U5 buck -> +3V3 ; U12 load sw -> +3V3_RAD.\\n"
+     "VARIANT B only: U4 buck-boost -> VPA=5.0V for E21 (DNP in default).\\n"
      "FB1 -> +3V3_GNSS. U11 supervisor -> RESET_N. LEDs. 3V3_PI=ref+EEPROM.",
      "Refdes: U4/U5 regs; U10 inrush; U11 supervisor; U12 load sw; L1/L2; "
      "C1-C10; FB1; R10-R14 FB; D1 TVS; D_PWR/D_TX/D_FIX + R70-72",
@@ -147,12 +147,13 @@ SHEETS = [
       "MM_RESET_N", "MM_PWR2", "+3V3_RAD", "GND",
       "RF_900", "PA_TX_CTL", "PA_RX_CTL"]),
     ("PA_Frontend_E21", "pa_frontend.kicad_sch",
-     "E21-900G30S U2 (VCC=5.0V, ~620mA TX, +20dBm in->+30dBm out).\\n"
-     "RF_900 (module ANT +22..25dBm) -> C34 -> RN1 ~3-5dB pad -> PIN(6).\\n"
-     "ANT(9) -> FL2 LPF -> C35 -> J3 U.FL2 (+30dBm harmonic compliance).\\n"
-     "TX_EN(3)/RX_EN(4) <- PA_TX/RX_CTL; R33/R34 pulldown=Shutdown default.",
-     "Refdes: U2 E21; J3 U.FL; FL2 LPF; RN1 pad; C30-C35; R33-R36; D30 ESD",
-     ["RF_900", "ANT_900", "PA_TX_CTL", "PA_RX_CTL", "VPA", "GND",
+     "E21-900G30S U2 -- VARIANT B (DNP DEFAULT). +30dBm extended-range opt.\\n"
+     "Variant A (default): module ANT -> C_BYP RF bypass -> J3 U.FL2 (no PA).\\n"
+     "Variant B: RF_900 -> C34 -> RN1 ~3-5dB pad -> PIN(6); ANT(9)->FL2->U.FL2.\\n"
+     "TX_EN(3)/RX_EN(4) <- PA_TX/RX_CTL (BCF); R33/R34 pulldown=off default.",
+     "Refdes: U2 E21; C_BYP bypass(VarA); J3 U.FL; FL2 LPF; RN1 pad; "
+     "C30-C35; R33-R36; D30 ESD",
+     ["RF_900", "ANT_900", "C_BYP", "PA_TX_CTL", "PA_RX_CTL", "VPA", "GND",
       "FEM_TXEN_FB", "FEM_RXEN_FB"]),
     ("GNSS_RTC", "gnss.kicad_sch",
      "u-blox NEO-M9N U3 (UART0 + 1PPS GPIO18, I2C1). VCC via FB1.\\n"

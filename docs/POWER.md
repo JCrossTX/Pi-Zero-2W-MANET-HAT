@@ -35,9 +35,14 @@ radios from it browns out the Pi).
 
 ## 3. Power budget (estimate — confirm against datasheets)
 
+**Default build (Variant A, no E21):** total HAT draw at 5 V ≈ module TX (~330 mA
+@3.3 V → ~0.25 A from 5 V) + GNSS/RTC (~0.1 A) ≈ **~0.35 A**, on top of the Pi —
+no buck-boost, no 620 mA PA burst. Good for battery handhelds. The table below is
+the **Variant B (E21 populated)** worst case.
+
 | Rail | Load | Typical | Peak | Notes (datasheet-confirmed) |
 |------|------|--------:|-----:|-------|
-| VPA (5.0 V) | E21 PA, TX | 620 mA | **660 mA** | at +30 dBm (E21 ds); RX ~8 mA |
+| VPA (5.0 V) | E21 PA, TX (Variant B) | 620 mA | **660 mA** | at +30 dBm (E21 ds); RX ~8 mA |
 | +3V3_RAD | MM8108 module, TX | — | **~330 mA** | VBAT_TX ≤281 mA + VBAT ~52 mA @3.3 V (Table 6) |
 | +3V3_RAD | MM8108 module, RX | ~20–34 mA | — | active RX (Table 7) |
 | +3V3 | NEO-M9N | ~30 mA | ~70 mA acq | + active-antenna via VCC_RF (≤200 mA) |

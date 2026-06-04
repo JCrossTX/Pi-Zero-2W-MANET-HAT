@@ -22,7 +22,9 @@ MM_IRQ,J1,29,U1,14,gpio,GPIO5 -> module SPI_INT (pin14) (OpenMANET spi-irq-gpios
 MM_RESET_N,J1,11,U1,4,gpio,GPIO17 + supervisor U11 -> module RESET_N (pin4)
 MM_PWR1,J1,16,U12,EN,gpio,GPIO23 -> radio-rail load switch enable (power-gpios)
 MM_PWR2,J1,18,U1,5,gpio,GPIO24 -> module WAKE (pin5) (power-gpios)
-RF_900,U1,2,RN1,1,rf,module ANT (pin2, +22..+25.5dBm) -> drive pad
+RF_900,U1,2,C_BYP,1,rf,VARIANT A (default): module ANT -> RF bypass -> U.FL2 (E21 DNP)
+ANT_900,C_BYP,2,J3,1,rf,VARIANT A bypass hand-off to U.FL #2 (50R series cap/jumper)
+RF_900,U1,2,RN1,1,rf,VARIANT B: module ANT (+22..+25.5dBm) -> drive pad
 RF_900,RN1,2,U2,6,rf,pad out -> E21 PIN (pin6) transceiver side, 50R (C34 DC-block)
 ANT_900,U2,9,FL2,1,rf,E21 ANT (pin9) -> harmonic LPF (C35 DC-block)
 ANT_900,FL2,2,J3,1,rf,LPF -> U.FL #2 (900 MHz); D30 ESD
