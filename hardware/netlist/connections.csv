@@ -1,0 +1,38 @@
+net,from_ref,from_pin,to_ref,to_pin,class,notes
++5V,J1,2,U4,VIN,power,header 5V -> buck-boost in
++5V,J1,4,U4,VIN,power,parallel 5V feed
++5V,J1,2,U5,VIN,power,header 5V -> 3V3 reg in
+GND,J1,6,*,GND,power,common ground (pins 6/9/14/20/25/30/34/39)
+VPA,U4,VOUT,U2,VCC,power,buck-boost out -> E21 PA rail (~5.0V; verify)
+VPA,U4,VOUT,C_BULK,1,power,bulk cap for TX bursts
++3V3,U5,VOUT,U1,VIO,power,3V3 -> MM8108 IO/main (verify rails)
++3V3,U5,VOUT,U3,VCC,power,3V3 -> NEO-M9N (via ferrite -> +3V3_GNSS)
+3V3_PI,J1,1,U6,VCC,power,HAT ID EEPROM powered from Pi 3V3 (readable at boot)
+SPI_MOSI,J1,19,U1,SPI_MOSI,spi,SPI0 MOSI (GPIO10)
+SPI_MISO,J1,21,U1,SPI_MISO,spi,SPI0 MISO (GPIO9)
+SPI_SCLK,J1,23,U1,SPI_SCLK,spi,SPI0 SCLK (GPIO11)
+SPI_CS_MM,J1,24,U1,SPI_CS,spi,SPI0 CS0 GPIO8 -> MM8108 CS (OpenMANET)
+MM_IRQ,J1,29,U1,IRQ,gpio,GPIO5 MM8108 IRQ/BUSY -> host (OpenMANET spi-irq-gpios)
+MM_RESET_N,J1,11,U1,RESET_N,gpio,GPIO17 MM8108 reset active low (OpenMANET reset-gpios)
+MM_PWR1,J1,16,U1,PWR0,gpio,GPIO23 MM8108 power/enable[0] (OpenMANET power-gpios)
+MM_PWR2,J1,18,U1,PWR1,gpio,GPIO24 MM8108 power/enable[1] (OpenMANET power-gpios)
+RF_900,U1,RF_FEM,U2,RFI,rf,50R MM8108 ext-FEM -> E21 transceiver side (add pad if needed)
+ANT_900,U2,RFO,J3,1,rf,50R E21 antenna side -> U.FL #2 (900 MHz)
+FEM_TX,U1,FEM_TX,U2,TXEN,gpio,radio-driven T/R (TX enable)
+FEM_RX,U1,FEM_RX,U2,RXEN,gpio,radio-driven T/R (RX enable)
+FEM_TXEN_FB,J1,7,U2,TXEN,gpio,DNP Pi-GPIO fallback GPIO4 (0R option)
+FEM_RXEN_FB,J1,31,U2,RXEN,gpio,DNP Pi-GPIO fallback GPIO6 (0R option)
+GNSS_RXD,J1,8,U3,RXD,uart,GPIO14 Pi TXD0 -> GNSS RX
+GNSS_TXD,J1,10,U3,TXD,uart,GPIO15 GNSS TX -> Pi RXD0
+GNSS_PPS,J1,12,U3,TIMEPULSE,gpio,GPIO18 1 PPS time sync
+GNSS_SDA,J1,3,U3,SDA,i2c,GPIO2 I2C alt (SDA1)
+GNSS_SCL,J1,5,U3,SCL,i2c,GPIO3 I2C alt (SCL1)
+GNSS_RESET_N,J1,13,U3,RESET_N,gpio,GPIO27 GNSS reset (optional)
+GNSS_EXTINT,J1,15,U3,EXTINT,gpio,GPIO22 GNSS EXTINT (optional)
+RF_GNSS,J2,1,U3,RF_IN,rf,U.FL #1 -> NEO-M9N RF input (50R; DC block C)
+ANT_BIAS,U3,VCC_RF,J2,1,power,NEO-M9N VCC_RF -> bias inductor -> U.FL center (active antenna)
++3V3_GNSS,FB1,2,U3,VCC,power,filtered 3V3 to GNSS via ferrite FB1
+ID_SD,J1,27,U6,SDA,i2c,HAT ID EEPROM data
+ID_SC,J1,28,U6,SCL,i2c,HAT ID EEPROM clock
+3V3_PI,J1,1,NET,REF,power,Pi 3V3 reference only (not a supply)
+3V3_PI,J1,17,NET,REF,power,Pi 3V3 reference only (not a supply)
