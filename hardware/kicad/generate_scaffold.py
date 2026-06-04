@@ -129,36 +129,40 @@ def build_pcb():
 # --------------------------------------------------------------------------- #
 SHEETS = [
     ("Power", "power.kicad_sch",
-     "POWER  (see docs/SCHEMATIC.md S1)\\n"
-     "5V (hdr) -> U4 buck-boost (TPS63802) -> VPA (E21 rail, verify ~5.0V)\\n"
-     "5V (hdr) -> U5 buck (TLV62569) -> +3V3 ; FB1 ferrite -> +3V3_GNSS\\n"
-     "VPA bulk C7 100-220uF for TX bursts. 3V3_PI = ref + EEPROM only.",
-     "Refdes: U4,U5 regs; L1,L2; C1-C10 dec/bulk; FB1; R10-R14 FB div; D1 TVS",
-     ["+5V", "GND", "VPA", "+3V3", "+3V3_GNSS", "3V3_PI"]),
+     "POWER + PWR MGMT (see docs/SCHEMATIC.md S1,S6,S7)\\n"
+     "5V (hdr) -> U10 inrush switch -> U4 buck-boost -> VPA=5.0V (E21)\\n"
+     "+5V_SW -> U5 buck -> +3V3 ; U12 load sw -> +3V3_RAD (module)\\n"
+     "FB1 -> +3V3_GNSS. U11 supervisor -> RESET_N. LEDs. 3V3_PI=ref+EEPROM.",
+     "Refdes: U4/U5 regs; U10 inrush; U11 supervisor; U12 load sw; L1/L2; "
+     "C1-C10; FB1; R10-R14 FB; D1 TVS; D_PWR/D_TX/D_FIX + R70-72",
+     ["+5V", "+5V_SW", "GND", "VPA", "+3V3", "+3V3_RAD", "+3V3_GNSS", "3V3_PI",
+      "MM_PWR1", "MM_RESET_N", "LED_PWR", "LED_TX", "LED_FIX"]),
     ("HaLow_Radio_MM8108", "halow_radio.kicad_sch",
-     "MM8108 Wi-Fi HaLow radio U1 (SPI host, ext-FEM RF).\\n"
-     "OpenMANET pinout: CS0=GPIO8, RST=GPIO17, PWR=GPIO23/24, IRQ=GPIO5.\\n"
-     "RF_900 -> external E21 FEM. FEM_TX/FEM_RX drive E21 T/R.\\n"
-     "Detailed pinout/power-seq are NDA -> fill from vendor ref design.",
-     "Refdes: U1 MM8108; Y1 clk; R20-R23 SPI term; R24/R25 pulls; dec array",
+     "MM8108-MF15457 module U1 (38-pin, self-contained, SPI host).\\n"
+     "Power: VBAT(10)/VBAT_TX(24)/VDDIO(22) = +3V3_RAD. Single ANT(2).\\n"
+     "SPI: MOSI16/MISO12/SCK17/CS13; INT14->IRQ; RST_N(4); WAKE(5).\\n"
+     "ANT(2)->RF_900->E21. GPIO0(32)/GPIO1(31)->PA_TX/RX_CTL (OpenMANET FW).",
+     "Refdes: U1 MF15457; R20-R23 SPI term; R24-R27 10k SDIO/SPI pulls; dec",
      ["SPI_MOSI", "SPI_MISO", "SPI_SCLK", "SPI_CS_MM", "MM_IRQ",
-      "MM_RESET_N", "MM_PWR1", "MM_PWR2", "+3V3", "GND",
-      "RF_900", "FEM_TX", "FEM_RX"]),
+      "MM_RESET_N", "MM_PWR2", "+3V3_RAD", "GND",
+      "RF_900", "PA_TX_CTL", "PA_RX_CTL"]),
     ("PA_Frontend_E21", "pa_frontend.kicad_sch",
-     "E21-900G30S PA/LNA front-end U2 (30 dBm, 850-931 MHz).\\n"
-     "RF_900 -> C34 -> RN1 pad (DNP) -> RFI ; RFO -> C35 -> J3 U.FL2.\\n"
-     "TXEN/RXEN from MM8108 FEM ctrl, R33/R34 pulldown=Shutdown default.\\n"
-     "FEM_*_FB via R35/R36 (DNP 0R) = Pi-GPIO fallback only.",
-     "Refdes: U2 E21; J3 U.FL; C30-C35; RN1 atten pad; R33-R36; D30 ESD",
-     ["RF_900", "ANT_900", "FEM_TX", "FEM_RX", "VPA", "GND",
+     "E21-900G30S U2 (VCC=5.0V, ~620mA TX, +20dBm in->+30dBm out).\\n"
+     "RF_900 (module ANT +22..25dBm) -> C34 -> RN1 ~3-5dB pad -> PIN(6).\\n"
+     "ANT(9) -> FL2 LPF -> C35 -> J3 U.FL2 (+30dBm harmonic compliance).\\n"
+     "TX_EN(3)/RX_EN(4) <- PA_TX/RX_CTL; R33/R34 pulldown=Shutdown default.",
+     "Refdes: U2 E21; J3 U.FL; FL2 LPF; RN1 pad; C30-C35; R33-R36; D30 ESD",
+     ["RF_900", "ANT_900", "PA_TX_CTL", "PA_RX_CTL", "VPA", "GND",
       "FEM_TXEN_FB", "FEM_RXEN_FB"]),
-    ("GNSS_NEO_M9N", "gnss.kicad_sch",
-     "u-blox NEO-M9N U3. UART0 + 1PPS (GPIO18). I2C alt.\\n"
-     "RF_GNSS <- J2 U.FL1 -> C44 -> RF_IN. VCC_RF -> L40 bias (active ant).\\n"
-     "VCC via FB1 -> +3V3_GNSS. Keep RF away from PA + buck switch node.",
-     "Refdes: U3 NEO-M9N; J2 U.FL; L40/R44 bias; C40-C44; R41-R43 pulls",
+    ("GNSS_RTC", "gnss.kicad_sch",
+     "u-blox NEO-M9N U3 (UART0 + 1PPS GPIO18, I2C1). VCC via FB1.\\n"
+     "RF_GNSS <- J2 U.FL1 -> C44 -> RF_IN(11); VCC_RF(9) -> L40 bias; D8 ESD.\\n"
+     "RV-3028 RTC U13 on I2C1 (0x52), trickle-charged BT1 solder cell.\\n"
+     "RTC_INT -> GPIO26. 1PPS can discipline the RTC. Keep RF from PA/buck.",
+     "Refdes: U3 NEO-M9N; U13 RV-3028; BT1 MS621FE; J2 U.FL; L40/R44; D8; C40-44",
      ["GNSS_RXD", "GNSS_TXD", "GNSS_PPS", "GNSS_SDA", "GNSS_SCL",
-      "GNSS_RESET_N", "GNSS_EXTINT", "RF_GNSS", "ANT_BIAS", "+3V3_GNSS", "GND"]),
+      "GNSS_RESET_N", "GNSS_EXTINT", "RF_GNSS", "ANT_BIAS", "+3V3_GNSS",
+      "RTC_INT", "RTC_VBAT", "+3V3", "GND"]),
     ("Header_EEPROM", "header_eeprom.kicad_sch",
      "40-pin female header J1 + HAT ID EEPROM U6 (24Cxx on ID_SD/ID_SC).\\n"
      "U6 VCC = 3V3_PI (Pi 3V3, pin1) so it reads at boot. WP=protected default.\\n"
@@ -168,7 +172,8 @@ SHEETS = [
       "SPI_MOSI", "SPI_MISO", "SPI_SCLK", "SPI_CS_MM",
       "MM_IRQ", "MM_RESET_N", "MM_PWR1", "MM_PWR2",
       "GNSS_RXD", "GNSS_TXD", "GNSS_PPS", "GNSS_SDA", "GNSS_SCL",
-      "GNSS_RESET_N", "GNSS_EXTINT", "FEM_TXEN_FB", "FEM_RXEN_FB"]),
+      "GNSS_RESET_N", "GNSS_EXTINT", "RTC_INT", "LED_FIX",
+      "FEM_TXEN_FB", "FEM_RXEN_FB"]),
 ]
 
 

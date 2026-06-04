@@ -15,6 +15,9 @@ datasheet — confirm before committing. Conventions: `R` 0402 1%, `C` 0402 X7R
 - Input bulk at the header: `C1` 100 µF (≥10 V, low-ESR) ‖ `C2` 10 µF ‖ `C3` 100 nF.
 - Optional input protection: `D1` reverse/ESD (e.g. SMAJ5.0A TVS) across +5V/GND;
   `F1` resettable fuse (PTC) or ferrite in series for the HAT load.
+- **Inrush soft-start `U10`** (load switch, TPS22965 w/ controlled slew) between
+  header `+5V` and the buck-boost input, so the VPA bulk doesn't brown out the Pi
+  at plug-in. EN = on after a small RC delay (or tied on). (Necessary item N4.)
 
 ### 1.2 Buck-boost → `VPA` (E21 PA rail)
 - `U4` = **TI TPS63802** (alt **TPS63070** for more headroom). Topology: 5 V in,
@@ -45,61 +48,79 @@ datasheet — confirm before committing. Conventions: `R` 0402 1%, `C` 0402 X7R
 
 ---
 
-## 2. HaLow radio — MM8108 (`halow_radio.kicad_sch`)
+## 2. HaLow radio — MM8108-MF15457 module (`halow_radio.kicad_sch`)
 
-> Detailed pinout / power-sequencing / RF reference are **NDA-gated**. Treat as a
-> parameterised block; transcribe exact pins from the Morse Micro reference
-> design or use a module. Nets below are fixed by this board.
+Per the module datasheet ([`../hardware/MM8108-MF15457_Data_Sheet.pdf`](../hardware/MM8108-MF15457_Data_Sheet.pdf)),
+38-pin module, **self-contained** (internal clock + PMU + PA). Relevant pins:
 
-- `U1` = MM8108 SoC (5×5 BGA) **or** an MM8108 module exposing the ext-FEM RF path.
-- **SPI (to header):** `SPI_MOSI`/`SPI_MISO`/`SPI_SCLK`/`SPI_CS_MM`.
-  - Series-term option `R20–R23` (0 Ω default, footprint for 22 Ω) on the 4 SPI
-    lines for SI at 20 MHz over the header.
-  - `R24` 10 kΩ pull-up on `SPI_CS_MM` to `+3V3` (idle-high CS).
-- **Control:** `MM_IRQ` (GPIO5, in), `MM_RESET_N` (GPIO17), `MM_PWR1/2`
-  (GPIO23/24). `R25` 10 kΩ pull-up on `MM_RESET_N` to `+3V3`; optional `C` 100 nF
-  RC for clean reset. Pulls on PWR lines per the radio's power-on requirement.
-- **Power:** `+3V3` (+ any internal 1V8/1V2 per ref design — many parts derive
-  these from an internal PMU; provide the required external rails/inductor if the
-  PMU needs them). Decoupling array per ref design (one 100 nF per supply ball +
-  bulk 4.7–10 µF).
-- **Clock:** reference crystal/TCXO `Y1` per the ref design (frequency + load caps
-  from Morse Micro). **VERIFY.**
-- **RF:** `RF_900` = ext-FEM TX/RX port → §3. `FEM_TX`/`FEM_RX` = FEM-control
-  outputs → E21 T/R (§3.4).
+| Pin | Name | Use here |
+|-----|------|----------|
+| 2 | ANT | RF output (post-internal-PA) → §3 cascade into E21 |
+| 4 | RESET_N | ← supervisor/Pi GPIO17 (`MM_RESET_N`) |
+| 5 | WAKE | ← `MM_PWR2` (GPIO24) |
+| 10 | VBAT | +3V3 (3.0–3.6 V) |
+| 12/13/14/16/17 | SPI_MISO/SPI_CS/SPI_INT/SPI_MOSI/SPI_SCK | host SPI (alt-fn of SDIO pins) |
+| 22 | VDDIO | +3V3 (host I/O, 2.25–3.6 V) |
+| 24 | VBAT_TX | +3V3 (PA-domain, ~330 mA TX burst) |
+| 25 | VDD_USB | N/C (USB unused) — terminate per datasheet |
+| 29 | BUSY | optional → spare Pi GPIO |
+| 31/32 | GPIO1/GPIO0 | **→ E21 RX_EN / TX_EN** (PA T/R, via OpenMANET FW) |
+
+- `U1` = MM8108-MF15457.
+- **Power:** `VBAT`(10), `VBAT_TX`(24), `VDDIO`(22) all = `+3V3`. Decoupling per
+  pin: 10 µF + 100 nF each; extra bulk 22 µF on `VBAT_TX`. **No external SoC
+  inductors / 1V8 / 1V2 / TCXO** — the module integrates them.
+- **SPI (to header):** SPI_MOSI(16)/SPI_MISO(12)/SPI_SCK(17)/SPI_CS(13).
+  - `R20–R23` series-term option (0 Ω default, 22 Ω pad) for SI at 20 MHz.
+  - SDIO/SPI bus pins (except CLK) need **10 kΩ–100 kΩ pull-ups** (datasheet note
+    [1]): `R24–R27` 10 kΩ to `+3V3` on MISO/CS/INT/MOSI.
+- **Control:** `SPI_INT`(14) → `MM_IRQ` (GPIO5). `RESET_N`(4) → `MM_RESET_N`
+  (GPIO17) via supervisor §7; timing t0 ≥ 50 µs after VBAT, reset pulse t1 ≥
+  1000 µs. `WAKE`(5) → `MM_PWR2` (GPIO24).
+- **RF:** `ANT`(2) → `RF_900` (50 Ω) → §3.
+- **PA T/R:** module `GPIO0`(32)→`PA_TX_CTL`, `GPIO1`(31)→`PA_RX_CTL` → E21
+  TX_EN/RX_EN (§3.4). Requires OpenMANET FW to toggle these (see
+  [`COMPONENTS_GAP.md`](COMPONENTS_GAP.md) N4 / [`DECISIONS.md`](DECISIONS.md) B5).
 
 ---
 
 ## 3. 900 MHz front-end — E21-900G30S (`pa_frontend.kicad_sch`)
 
-E21 stamp module pins (typical): `VCC`, `GND`(×n), `TXEN`, `RXEN`, `RFI`
-(transceiver/IO side), `RFO`/`ANT` (antenna side). **VERIFY pin map** vs the
-current EBYTE datasheet.
+E21 pins (datasheet [`../hardware/E21-900G30S_UserManual_EN_v1.0.pdf`](../hardware/E21-900G30S_UserManual_EN_v1.0.pdf)):
+1 `VCC` (4.75–5.5 V, 5 V rec); 2 `GND`; 3 `TX_EN`; 4 `RX_EN`; 5 `GND`; **6 `PIN`
+= transceiver side** (TX in / RX out, 50 Ω); 7/8 `GND`; **9 `ANT` = antenna side**
+(TX out / RX in, 50 Ω); 10 `GND`. Specs: ~+20 dBm in → +30 dBm out (12 dB gain),
+~620 mA TX, has built-in filter/limiter.
 
 ### 3.1 Power
-- `U2.VCC` = `VPA`. Local decoupling: `C30` 100 µF (bulk, shared with `C7`) ‖
-  `C31` 10 µF ‖ `C32` 100 nF ‖ `C33` 10 nF, fanned by frequency, right at VCC.
+- `U2.VCC`(1) = `VPA` (**5.0 V**). Decoupling fanned by frequency right at pin 1:
+  `C30` 100 µF (bulk) ‖ `C31` 10 µF ‖ `C32` 100 nF ‖ `C33` 10 nF.
 
-### 3.2 TX/RX RF path
-- **`RF_900` → E21 `RFI`:** 50 Ω microstrip. `C34` 100 pF DC-block in series.
-  - **Drive-set attenuator** `RN1` = π-pad footprint (`R30` series, `R31`/`R32`
-    shunt), **default `R30`=0 Ω, `R31`/`R32`=DNP**; populate to drop MM8108 drive
-    into the E21 linear window after measurement ([`DECISIONS.md`](DECISIONS.md) B3).
-- **E21 `RFO` → `ANT_900` → `J3` (U.FL #2):** 50 Ω. `C35` 100 pF DC-block.
-  Optional `D30` RF ESD clamp (low-C, e.g. RClamp0521) at the connector.
+### 3.2 TX/RX RF path (cascade off the module ANT)
+- **`RF_900` (module ANT, +22…+25.5 dBm) → E21 `PIN`(6):** 50 Ω microstrip.
+  `C34` 100 pF DC-block in series.
+  - **Drive pad `RN1`** = π-pad footprint (`R30` series + `R31`/`R32` shunt) sized
+    for **~3–5 dB** to land near the E21's +20 dBm input and stay below its max
+    (set per measured hottest BW/MCS — [`DECISIONS.md`](DECISIONS.md) B3). Footprint
+    allows 0 dB (R30=0, shunts DNP) if measurement says no pad needed.
+- **E21 `ANT`(9) → `FL2` LPF → `ANT_900` → `J3` (U.FL #2):** 50 Ω. `C35` 100 pF
+  DC-block. **`FL2`** = π-LC low-pass or 915 MHz ceramic BPF for +30 dBm harmonic
+  compliance (populate per measured harmonics — E21 has some built-in filtering).
+  `D30` low-C RF ESD clamp (e.g. RClamp0521) at the connector.
 
 ### 3.3 Antenna connector
 - `J3` = U.FL/IPEX SMT, board edge. Ground the shell with vias.
 
-### 3.4 T/R switching
-- `U2.TXEN` ← `FEM_TX`; `U2.RXEN` ← `FEM_RX` (from MM8108 FEM ctrl).
-- `R33`/`R34` 10 kΩ **pull-downs** on TXEN/RXEN → default **Shutdown** at reset
-  (both low). Never allow both high.
-- **Optional interlock** `U7` (single-gate, e.g. SN74LVC1G): derive RXEN = NOT
-  TXEN if the radio drives only one line, or use as a guard. DNP if MM8108 gives
-  clean complementary FEM control.
-- **Fallback (DNP):** `R35` 0 Ω from `FEM_TXEN_FB` (hdr GPIO4) to TXEN; `R36` 0 Ω
-  from `FEM_RXEN_FB` (hdr GPIO6) to RXEN — bring-up only.
+### 3.4 T/R switching (no hardware FEM line on the module)
+- `U2.TX_EN`(3) ← `PA_TX_CTL`; `U2.RX_EN`(4) ← `PA_RX_CTL`. Source = **module
+  GPIO0/GPIO1 via OpenMANET firmware** (preferred) — see B5/N4.
+- `R33`/`R34` 10 kΩ **pull-downs** on TX_EN/RX_EN → default **Shutdown** (both
+  low) at reset. Never both high. Control level 3.3 V (datasheet: 3.0–5.25 V).
+- **Auto-T/R fallback (DNP, populate if FW can't drive GPIOs):** directional
+  coupler at E21 `PIN` + RF detector `U8` (LTC5564/ADL6010) + comparator `U9` →
+  TX_EN/RX_EN (VOX). See [`COMPONENTS_GAP.md`](COMPONENTS_GAP.md) N4(b).
+- **Pi-GPIO fallback (DNP, bring-up only):** `R35` 0 Ω `FEM_TXEN_FB` (GPIO4)→TX_EN;
+  `R36` 0 Ω `FEM_RXEN_FB` (GPIO6)→RX_EN.
 
 ---
 
@@ -137,7 +158,36 @@ current EBYTE datasheet.
 
 ---
 
-## 6. Net ↔ refdes cross-reference
+## 6. Power management & supervisor (`power.kicad_sch`)
+- **Radio-rail load switch `U12`** (TPS22918/TPS22965): `+3V3` → module
+  `VBAT`/`VBAT_TX`/`VDDIO`, `EN` = `MM_PWR1` (GPIO23) — implements the OpenMANET
+  `power-gpios` semantics + soft-start for the module. (Item N6.)
+- **Supervisor `U11`** (TPS3839, 3.3 V): open-drain `RESET` wired-AND with Pi
+  `MM_RESET_N` (GPIO17) into module `RESET_N`(4); holds reset until +3V3 valid and
+  meets t0/t1 timing. `R60` pull-up to `+3V3`. (Item N5.)
+
+## 7. Status LEDs (`power.kicad_sch` / `header_eeprom.kicad_sch`)
+- `D_PWR` green ← `+3V3` via `R70` 1 kΩ (power good).
+- `D_TX` red ← `PA_TX_CTL` via `R71` 1 kΩ (PA transmit active).
+- `D_FIX` green ← Pi `GPIO12` (pin 32, `LED_FIX`) via `R72` 1 kΩ (GNSS fix,
+  driven by host from PPS/fix status). (Item N9.)
+
+## 8. RTC + soldered backup cell (`gnss.kicad_sch` or `header_eeprom.kicad_sch`)
+- `U13` = **RV-3028-C7** I²C RTC (addr **0x52**). `VCC` = `+3V3`; `SDA`/`SCL` on
+  **I²C1** (shared with GNSS DDC — no address clash). `INT`/`CLKOUT` → Pi
+  `GPIO26` (pin 37, `RTC_INT`) for alarms/wake (optional). `C80` 100 nF.
+- `BT1` = **Seiko MS621FE** (or Panasonic ML414H/ML621) rechargeable, **solder-tab**
+  coin cell on `VBACKUP`; **trickle-charged** from `+3V3` via the RV-3028's internal
+  charger (enable + series-R per datasheet) so it never needs replacing.
+- Overlay: `dtoverlay=i2c-rtc,rv3028`. The GNSS 1 PPS can discipline the RTC.
+
+## 9. RF shields & thermal
+- **Shield frames** over the PA section and/or module (footprint = shield-clip
+  fence + lid) for EMC and PA↔GNSS isolation. (Item N7.)
+- **E21 thermal:** copper pour + thermal via array under `U2` (~1.5–2 W); optional
+  clip-on heatsink land. (Item N10.)
+
+## 10. Net ↔ refdes cross-reference
 See [`../hardware/netlist/connections.csv`](../hardware/netlist/connections.csv)
 for the authoritative net list; this document adds the passive/refdes detail that
 sits between those endpoints. Update both together.

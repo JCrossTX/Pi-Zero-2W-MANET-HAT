@@ -57,17 +57,21 @@ and [`../firmware/openmanet/README.md`](../firmware/openmanet/README.md).
 
 ## B. Open risks / must-resolve-before-fab
 
+> **Datasheets now in [`../hardware/`](../hardware/)** (MM8108-MF15457,
+> E21-900G30S, NEO-M9N-00B) — several risks below are resolved or refined. Full
+> component-by-component status: [`COMPONENTS_GAP.md`](COMPONENTS_GAP.md).
+
 | # | Item | Why it matters | Action |
 |---|------|----------------|--------|
-| B1 | **MM8108 detailed design is NDA-gated** | Exact pinout, power sequencing, crystal, and RF reference are needed for a real schematic | Get the Morse Micro reference design / module datasheet under NDA; **strongly consider a pre-certified MM8108 module** that breaks out the external-FEM RF path + control |
-| B2 | **External-FEM RF path availability** | The E21 PA is only useful if the MM8108 RF can bypass its internal PA into an external FEM. A module that only exposes a post-internal-PA antenna port can't drive the E21 cleanly | Confirm the chosen MM8108 variant supports/breaks out external FEM; if not, reconsider PA topology |
-| B3 | **MM8108 → E21 drive level** | Over-driving the E21 RFI saturates/can damage the PA; under-driving loses power | Measure MM8108 ext-FEM TX output; add a fixed **attenuator pad** to land in the E21 linear input window |
-| B4 | **E21 VCC / VPA voltage** | Sets buck-boost FB divider and current budget | Read the *current* E21-900G30S datasheet (3.0–5.5 V, ~5.0 V rec.); set VPA accordingly |
-| B5 | **FEM T/R timing source** | Pi GPIO is too slow for per-burst T/R; both-high is illegal | Drive E21 TXEN/RXEN from MM8108 FEM-control outputs; add interlock/pulldowns; Pi-GPIO fallback links are DNP |
-| B6 | **900 MHz PA ↔ GNSS coexistence** | +30 dBm next to a GNSS RX on a tiny board can desense it | Opposite-end U.FL, ground fencing, optional GNSS pre-filter; validate C/N₀ with PA keyed |
-| B7 | **Bottom-side clearance to Pi** | Pi connectors / SD / camera FPC / RF can limit bottom components | Build keepouts from the Pi Zero 2 W DXF; use taller header/standoffs if needed |
-| B8 | **Header position exactness** | Must match Pi Zero 2 W to mate | Place the real 2×20 footprint at the DXF-exact location (scaffold marks nominal `VERIFY`) |
-| B9 | **Upstream 5 V capacity & regulatory** | PA + Pi can need ≥3 A; 1 W EIRP is power/duty-limited | Spec ≥3 A supply; confirm FCC Part 15.247 / ETSI EN 300 220 compliance for region |
+| B1 | ~~MM8108 NDA-gated~~ **RESOLVED** | — | Using the **MF15457 module**: self-contained, only VBAT/VBAT_TX/VDDIO 3.0–3.6 V, internal clock, no external SoC inductors/rails, no strict sequencing |
+| B2 | **Module has integrated PA + single ANT, no FEM tap** | The external E21 cannot tap a pre-PA RF port; it must cascade off the module's +22…+25.5 dBm ANT output | Cascade module ANT → pad → E21 `PIN`; accept ~+5–8 dB net system gain; **recertify** end product at +30 dBm |
+| B3 | **MM8108 → E21 drive level** — refined | Module +22…+25.5 dBm vs E21 +20 dBm target | Add a **fixed ~3–5 dB pad** (RN1) at E21 `PIN`; confirm against hottest BW/MCS so E21 input stays ≤ spec |
+| B4 | **VPA = 5.0 V** — RESOLVED | E21 needs 4.75–5.25 V, ~620 mA TX | Buck-boost output = **5.0 V**; bulk for the 620 mA burst |
+| B5 | **E21 T/R control — no hardware FEM line** | Module exposes no TX/RX indicator; Pi GPIO too slow for TDD bursts | **(a)** OpenMANET firmware toggles 2 module GPIOs → E21 TX_EN/RX_EN (preferred — confirm support), **or (b)** on-board RF-sense auto-T/R, **or (c)** Pi GPIO (bring-up only). Pull-downs = default Shutdown |
+| B6 | 900 MHz PA ↔ GNSS coexistence | +30 dBm beside a GNSS RX on 65×30 mm | Opposite-end U.FL, ground fencing, **RF shield cans**, optional GNSS pre-filter; validate C/N₀ with PA keyed |
+| B7 | Bottom-side clearance to Pi | Pi connectors/SD/camera/RF-can | Build keepouts from the Pi Zero 2 W DXF; taller header/standoffs if needed |
+| B8 | Header position exactness | Must mate with Pi Zero 2 W | Place real 2×20 footprint at DXF-exact location (scaffold = nominal `VERIFY`) |
+| B9 | Upstream 5 V capacity, **cert**, inrush | PA+module+Pi current; +30 dBm power/duty limits; bulk-cap inrush can brown out the Pi | Spec ≥3 A supply; **soft-start load switch** on +5 V; **recertify** end product (FCC 15.247 / ETSI EN 300 220) |
 
 ## C. Suggested implementation order
 1. Resolve **B1/B2** (MM8108 SoC-vs-module + ext-FEM) — gates the whole schematic.

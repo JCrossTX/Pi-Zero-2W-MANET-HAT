@@ -73,4 +73,30 @@
             };
         };
     };
+
+    /* I2C1 + RV-3028 RTC (addr 0x52). GNSS DDC (0x42) also lives on I2C1. */
+    fragment@4 {
+        target = <&i2c1>;
+        __overlay__ {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            status = "okay";
+
+            rtc: rtc@52 {
+                compatible = "microcrystal,rv3028";
+                reg = <0x52>;
+                /* optional: wakeup-source; interrupts via GPIO26 if wired */
+                status = "okay";
+            };
+        };
+    };
 };
+
+/*
+ * NOTE on the external E21 PA T/R control:
+ * The MM8108-MF15457 module exposes no hardware TX/RX FEM line. To switch the
+ * E21 in sync with bursts, OpenMANET firmware must toggle module GPIO0/GPIO1
+ * (PA_TX_CTL / PA_RX_CTL). If the firmware build does not support a PA-enable
+ * GPIO, populate the on-board RF-sense auto-T/R circuit instead (see
+ * docs/COMPONENTS_GAP.md N4). Pull-downs keep the E21 in Shutdown by default.
+ */

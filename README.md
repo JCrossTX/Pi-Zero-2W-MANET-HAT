@@ -41,8 +41,10 @@ docs/                 Engineer-ready design package
   RF.md               RF chain, FEM switching, matching, antennas
   MECHANICAL.md       Outline, mounting holes, two-sided placement, clearances
   BOM.md              Bill of materials (MPNs)
+  COMPONENTS_GAP.md   Datasheet-grounded gap analysis (what else the PCB needs)
   BRINGUP.md          Stage-gated power-on & test plan
   DECISIONS.md        Design decision log + open risks
+hardware/             Vendor datasheets (MM8108-MF15457, E21, NEO-M9N)
 hardware/
   kicad/              KiCad 10 project scaffold (project, board outline, sheets)
   netlist/            connections.csv — human/tool-readable net list
