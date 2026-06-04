@@ -1,0 +1,76 @@
+// Device-tree overlay for the Pi Zero 2 W MANET HAT.
+//
+// Pin assignment matches the OpenMANET Pi Zero 2 W MM8108/MM6108 *SPI* firmware
+// variant so the stock OpenMANET driver/userspace works unchanged:
+//   SPI0, CS0 = GPIO8, RESET = GPIO17, power/wake = GPIO23 + GPIO24,
+//   IRQ/BUSY = GPIO5, spi-max-frequency = 20 MHz, compatible "morse,mm610x-spi".
+// Also wires the NEO-M9N (UART0 + 1 PPS on GPIO18) on this board.
+//
+// Build:   dtc -@ -I dts -O dtb -o manet-hat.dtbo manet-hat-overlay.dts
+// Install: copy manet-hat.dtbo to /boot/firmware/overlays/ and add
+//          "dtoverlay=manet-hat" to config.txt (see docs/INTERFACES.md).
+//
+// NOTE: confirm the MM8108 driver's compatible string for your OpenMANET build
+// ("morse,mm610x-spi" works for the mm610x driver; an MM8108-specific build may
+//  use "morse,mm8108-spi"). Update below to match the kernel module in use.
+
+/dts-v1/;
+/plugin/;
+
+/ {
+    compatible = "brcm,bcm2837";   // BCM2710A1 on the Pi Zero 2 W
+
+    /* SPI0 with the MM8108 radio on CS0 (GPIO8) */
+    fragment@0 {
+        target = <&spi0>;
+        __overlay__ {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            status = "okay";
+
+            /* free CE1; keep CE0 (GPIO8) for the radio */
+            cs-gpios = <&gpio 8 1>;   /* GPIO8, active low */
+
+            mm8108: mm8108@0 {
+                compatible = "morse,mm610x-spi";
+                reg = <0>;                          /* CS0 */
+                spi-max-frequency = <20000000>;     /* 20 MHz */
+                reset-gpios = <&gpio 17 0>;         /* GPIO17 */
+                power-gpios = <&gpio 23 0>, <&gpio 24 0>;  /* GPIO23, GPIO24 */
+                spi-irq-gpios = <&gpio 5 0>;        /* GPIO5 IRQ/BUSY */
+                status = "okay";
+            };
+        };
+    };
+
+    /* Pin muxing for the radio control GPIOs */
+    fragment@1 {
+        target = <&gpio>;
+        __overlay__ {
+            mm8108_pins: mm8108_pins {
+                brcm,pins = <17 23 24 5>;
+                brcm,function = <1 1 1 0>;   /* 1=out (reset,pwr), 0=in (irq) */
+            };
+        };
+    };
+
+    /* UART0 (PL011) for the NEO-M9N GNSS */
+    fragment@2 {
+        target = <&uart0>;
+        __overlay__ {
+            status = "okay";
+        };
+    };
+
+    /* 1 PPS from the NEO-M9N on GPIO18 (phys 12) */
+    fragment@3 {
+        target-path = "/";
+        __overlay__ {
+            pps: pps@0 {
+                compatible = "pps-gpio";
+                gpios = <&gpio 18 0>;
+                status = "okay";
+            };
+        };
+    };
+};
