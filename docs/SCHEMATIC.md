@@ -16,20 +16,14 @@ datasheet — confirm before committing. Conventions: `R` 0402 1%, `C` 0402 X7R
 - Optional input protection: `D1` reverse/ESD (e.g. SMAJ5.0A TVS) across +5V/GND;
   `F1` resettable fuse (PTC) or ferrite in series for the HAT load.
 - **Inrush soft-start `U10`** (load switch, TPS22965 w/ controlled slew) between
-  header `+5V` and the buck-boost input, so the VPA bulk doesn't brown out the Pi
-  at plug-in. EN = on after a small RC delay (or tied on). (Necessary item N4.)
+  header `+5V` and the 3V3 buck input, so bulk caps don't brown out the Pi at
+  plug-in. EN = on after a small RC delay (or tied on). (Necessary item N4.)
 
-### 1.2 Buck-boost → `VPA` (E21 PA rail) — **Variant B only (DNP in default build)**
-- `U4` = **TI TPS63802** (alt **TPS63070** for more headroom). Topology: 5 V in,
-  regulated **~5.0 V** out (set per E21 datasheet — see [`DECISIONS.md`](DECISIONS.md) B4).
-- Feedback divider (Vout = Vref·(1 + R_top/R_bot)):
-  - TPS63802 **Vref ≈ 0.5 V (VERIFY)** → for 5.0 V, R_top/R_bot = 9.
-    `R10` (top) = 910 kΩ, `R11` (bot) = 100 kΩ (E96). If VPA target is 3.3 V,
-    R_top/R_bot = 5.6 → `R10` = 560 kΩ.
-- `L1` = 1.0 µH (per TPS63802 datasheet, low-DCR, ≥2 A sat).
-- `Cin` `C4` 10 µF; `Cout` `C5`+`C6` 2×22 µF; **VPA bulk** `C7` 100–220 µF
-  (low-ESR) at the E21 VCC to source TX bursts (see [`POWER.md`](POWER.md)).
-- `R12` 100 kΩ enable pull (tie EN to +5V or to a GPIO if soft-start gating wanted).
+### 1.2 ~~Buck-boost → VPA~~ — **REMOVED**
+The external E21 PA (which needed a 5 V `VPA` rail) is **retired** (see
+[`DECISIONS.md`](DECISIONS.md) B11). The MM8108-M20 integrates its PA at the module
+supply and the MF15457 fallback has no external PA, so `U4`/`L1`/`VPA` and the VPA
+bulk are deleted. Header 5 V now feeds only the 3V3 buck.
 
 ### 1.3 3V3 rail → `+3V3`
 - `U5` = **TI TLV62569** buck (alt LDO **AP2112-3.3 / TLV75533** if load < 0.6 A).
@@ -48,14 +42,22 @@ datasheet — confirm before committing. Conventions: `R` 0402 1%, `C` 0402 X7R
 
 ---
 
-## 2. HaLow radio — MM8108-MF15457 module (`halow_radio.kicad_sch`)
+## 2. HaLow radio — MM8108 module (`halow_radio.kicad_sch`)
 
-Per the module datasheet ([`../hardware/MM8108-MF15457_Data_Sheet.pdf`](../hardware/MM8108-MF15457_Data_Sheet.pdf)),
+**One radio site, two module options** ([`DECISIONS.md`](DECISIONS.md) §C):
+- **Primary = MM8108-M20** (integrated 28.5 dBm PA + 902–928 SAW, FCC/IC certified,
+  18.5 × 14 mm). **Pinout/power/footprint are TBD until Morse publishes the
+  datasheet (B12)** — its ANT goes straight to U.FL (no external PA), and it likely
+  needs no extra rail. The SPI/control nets below are shared.
+- **Fallback = MM8108-MF15457** (buildable today) — pin-level detail below is the
+  concrete baseline; the M20 drops into the same site once its datasheet lands.
+
+Per the MF15457 datasheet ([`../hardware/MM8108-MF15457_Data_Sheet.pdf`](../hardware/MM8108-MF15457_Data_Sheet.pdf)),
 38-pin module, **self-contained** (internal clock + PMU + PA). Relevant pins:
 
 | Pin | Name | Use here |
 |-----|------|----------|
-| 2 | ANT | RF output (post-internal-PA) → §3 cascade into E21 |
+| 2 | ANT | RF output (post-internal-PA, ~27 dBm) → §3 to U.FL #2 |
 | 4 | RESET_N | ← supervisor/Pi GPIO17 (`MM_RESET_N`) |
 | 5 | WAKE | ← `MM_PWR2` (GPIO24) |
 | 10 | VBAT | +3V3 (3.0–3.6 V) |
@@ -64,7 +66,7 @@ Per the module datasheet ([`../hardware/MM8108-MF15457_Data_Sheet.pdf`](../hardw
 | 24 | VBAT_TX | +3V3 (PA-domain, ~330 mA TX burst) |
 | 25 | VDD_USB | N/C (USB unused) — terminate per datasheet |
 | 29 | BUSY | optional → spare Pi GPIO |
-| 31/32 | GPIO1/GPIO0 | **→ E21 RX_EN / TX_EN** (PA T/R, via OpenMANET FW) |
+| 31/32 | GPIO1/GPIO0 | spare (E21 T/R retired) — route to test pads |
 
 - `U1` = MM8108-MF15457.
 - **Power:** `VBAT`(10), `VBAT_TX`(24), `VDDIO`(22) all = `+3V3`. Decoupling per
@@ -78,56 +80,26 @@ Per the module datasheet ([`../hardware/MM8108-MF15457_Data_Sheet.pdf`](../hardw
   (GPIO17) via supervisor §7; timing t0 ≥ 50 µs after VBAT, reset pulse t1 ≥
   1000 µs. `WAKE`(5) → `MM_PWR2` (GPIO24).
 - **RF:** `ANT`(2) → `RF_900` (50 Ω) → §3.
-- **PA T/R:** module `GPIO0`(32)→`PA_TX_CTL`, `GPIO1`(31)→`PA_RX_CTL` → E21
-  TX_EN/RX_EN (§3.4). Requires OpenMANET FW to toggle these (see
-  [`COMPONENTS_GAP.md`](COMPONENTS_GAP.md) N4 / [`DECISIONS.md`](DECISIONS.md) B5).
 
 ---
 
-## 3. 900 MHz front-end — E21-900G30S (`pa_frontend.kicad_sch`) — **Variant B (DNP default)**
+## 3. 900 MHz RF output / antenna (`pa_frontend.kicad_sch`)
 
-> **Default build (Variant A) depopulates this whole section.** The module `ANT`
-> routes straight to U.FL #2 through the RF bypass **`C_BYP`** (a 50 Ω series-cap /
-> RF jumper across the E21 `PIN`↔`ANT` lands), giving OpenMANET's ~27 dBm with no
-> PA. Populate the E21 (+ VPA buck-boost + LPF + T/R) and remove `C_BYP` only for
-> the extended-range Variant B. See [`DECISIONS.md`](DECISIONS.md) §C.
+> **The external E21 PA is retired** ([`DECISIONS.md`](DECISIONS.md) B11). Both
+> module options drive the antenna directly — the M20 has an **integrated PA + SAW**
+> and the MF15457 outputs ~27 dBm from its internal PA — so this section is now just
+> a clean 50 Ω hand-off to the connector, no PA / drive pad / T-R control.
 
+### 3.1 RF path
+- **Radio `ANT` (`RF_900`, 50 Ω) → `C35` 100 pF DC-block → `ANT_900` → `J3`
+  (U.FL #2).** Keep it a short, continuous 50 Ω microstrip with stitched ground.
+- **`FL2` (optional, MF15457 only):** π-LC low-pass / 915 MHz ceramic pad,
+  **DNP by default**. The M20 integrates a 902–928 SAW; MF15457 is modular-certified
+  on its own — populate only if measured harmonics need it.
+- `D30` low-C RF ESD clamp (e.g. RClamp0521) at the connector.
 
-E21 pins (datasheet [`../hardware/E21-900G30S_UserManual_EN_v1.0.pdf`](../hardware/E21-900G30S_UserManual_EN_v1.0.pdf)):
-1 `VCC` (4.75–5.5 V, 5 V rec); 2 `GND`; 3 `TX_EN`; 4 `RX_EN`; 5 `GND`; **6 `PIN`
-= transceiver side** (TX in / RX out, 50 Ω); 7/8 `GND`; **9 `ANT` = antenna side**
-(TX out / RX in, 50 Ω); 10 `GND`. Specs: ~+20 dBm in → +30 dBm out (12 dB gain),
-~620 mA TX, has built-in filter/limiter.
-
-### 3.1 Power
-- `U2.VCC`(1) = `VPA` (**5.0 V**). Decoupling fanned by frequency right at pin 1:
-  `C30` 100 µF (bulk) ‖ `C31` 10 µF ‖ `C32` 100 nF ‖ `C33` 10 nF.
-
-### 3.2 TX/RX RF path (cascade off the module ANT)
-- **`RF_900` (module ANT, +22…+25.5 dBm) → E21 `PIN`(6):** 50 Ω microstrip.
-  `C34` 100 pF DC-block in series.
-  - **Drive pad `RN1`** = π-pad footprint (`R30` series + `R31`/`R32` shunt) sized
-    for **~3–5 dB** to land near the E21's +20 dBm input and stay below its max
-    (set per measured hottest BW/MCS — [`DECISIONS.md`](DECISIONS.md) B3). Footprint
-    allows 0 dB (R30=0, shunts DNP) if measurement says no pad needed.
-- **E21 `ANT`(9) → `FL2` LPF → `ANT_900` → `J3` (U.FL #2):** 50 Ω. `C35` 100 pF
-  DC-block. **`FL2`** = π-LC low-pass or 915 MHz ceramic BPF for +30 dBm harmonic
-  compliance (populate per measured harmonics — E21 has some built-in filtering).
-  `D30` low-C RF ESD clamp (e.g. RClamp0521) at the connector.
-
-### 3.3 Antenna connector
+### 3.2 Antenna connector
 - `J3` = U.FL/IPEX SMT, board edge. Ground the shell with vias.
-
-### 3.4 T/R switching (no hardware FEM line on the module)
-- `U2.TX_EN`(3) ← `PA_TX_CTL`; `U2.RX_EN`(4) ← `PA_RX_CTL`. Source = **module
-  GPIO0/GPIO1 via OpenMANET firmware** (preferred) — see B5/N4.
-- `R33`/`R34` 10 kΩ **pull-downs** on TX_EN/RX_EN → default **Shutdown** (both
-  low) at reset. Never both high. Control level 3.3 V (datasheet: 3.0–5.25 V).
-- **Auto-T/R fallback (DNP, populate if FW can't drive GPIOs):** directional
-  coupler at E21 `PIN` + RF detector `U8` (LTC5564/ADL6010) + comparator `U9` →
-  TX_EN/RX_EN (VOX). See [`COMPONENTS_GAP.md`](COMPONENTS_GAP.md) N4(b).
-- **Pi-GPIO fallback (DNP, bring-up only):** `R35` 0 Ω `FEM_TXEN_FB` (GPIO4)→TX_EN;
-  `R36` 0 Ω `FEM_RXEN_FB` (GPIO6)→RX_EN.
 
 ---
 
@@ -175,7 +147,8 @@ E21 pins (datasheet [`../hardware/E21-900G30S_UserManual_EN_v1.0.pdf`](../hardwa
 
 ## 7. Status LEDs (`power.kicad_sch` / `header_eeprom.kicad_sch`)
 - `D_PWR` green ← `+3V3` via `R70` 1 kΩ (power good).
-- `D_TX` red ← `PA_TX_CTL` via `R71` 1 kΩ (PA transmit active).
+- `D_TX` red ← Pi GPIO (`LED_TX`) via `R71` 1 kΩ, host-driven on TX activity
+  (the old hardware `PA_TX_CTL` source is gone with the E21).
 - `D_FIX` green ← Pi `GPIO12` (pin 32, `LED_FIX`) via `R72` 1 kΩ (GNSS fix,
   driven by host from PPS/fix status). (Item N9.)
 
@@ -189,10 +162,10 @@ E21 pins (datasheet [`../hardware/E21-900G30S_UserManual_EN_v1.0.pdf`](../hardwa
 - Overlay: `dtoverlay=i2c-rtc,rv3028`. The GNSS 1 PPS can discipline the RTC.
 
 ## 9. RF shields & thermal
-- **Shield frames** over the PA section and/or module (footprint = shield-clip
-  fence + lid) for EMC and PA↔GNSS isolation. (Item N7.)
-- **E21 thermal:** copper pour + thermal via array under `U2` (~1.5–2 W); optional
-  clip-on heatsink land. (Item N10.)
+- **Shield frames** over the radio and/or GNSS (footprint = shield-clip fence + lid)
+  for EMC and radio↔GNSS isolation. (Item N7.)
+- **Radio thermal:** copper pour + thermal via array under the module (the M20's
+  integrated PA dissipates more than a bare MF15457); optional heatsink land. (N10.)
 
 ## 10. Net ↔ refdes cross-reference
 See [`../hardware/netlist/connections.csv`](../hardware/netlist/connections.csv)

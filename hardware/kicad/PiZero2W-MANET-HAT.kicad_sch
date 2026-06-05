@@ -2,10 +2,10 @@
 	(version 20260306)
 	(generator "eeschema")
 	(generator_version "10.0")
-	(uuid "43aba5d6-287a-403e-b882-7bbb3efed6d8")
+	(uuid "68fac97a-3676-4757-ad4a-dceea239e277")
 	(paper "A4")
 	(lib_symbols)
-	(text "Pi Zero 2W MANET HAT - root sheet\nHaLow (MM8108/SPI, OpenMANET-compatible) + E21 1W PA + NEO-M9N GNSS.\nSee docs/ for full design. Sub-sheets carry named nets; add symbols next." (exclude_from_sim no) (at 20 12 0) (effects (font (size 1.5 1.5)) (justify left top)) (uuid "749207d6-d273-4f17-84db-97bd25ed68cd"))
+	(text "Pi Zero 2W MANET HAT - root sheet\nHaLow MM8108-M20 (primary) / MF15457 (fallback), SPI + NEO-M9N GNSS.\nExternal E21 PA retired (B11). Sub-sheets carry named nets; add symbols next." (exclude_from_sim no) (at 20 12 0) (effects (font (size 1.5 1.5)) (justify left top)) (uuid "16bb9422-54aa-40db-a66b-d6ad94cab57e"))
 	(sheet
 		(at 30 40)
 		(size 55 35)
@@ -16,12 +16,12 @@
 		(fields_autoplaced yes)
 		(stroke (width 0.1524) (type solid))
 		(fill (color 0 0 0 0.0000))
-		(uuid "fb0eefb5-cb7c-42e8-8868-3376c7739ffa")
+		(uuid "852da10f-b508-4a55-ad27-a876c9b5fcf1")
 		(property "Sheetname" "Power" (at 30 39.36 0) (effects (font (size 1.27 1.27)) (justify left bottom)))
 		(property "Sheetfile" "power.kicad_sch" (at 30 75.5 0) (effects (font (size 1.27 1.27)) (justify left top)))
 		(instances
 			(project "PiZero2W-MANET-HAT"
-				(path "/43aba5d6-287a-403e-b882-7bbb3efed6d8" (page "2"))
+				(path "/68fac97a-3676-4757-ad4a-dceea239e277" (page "2"))
 			)
 		)
 	)
@@ -35,12 +35,12 @@
 		(fields_autoplaced yes)
 		(stroke (width 0.1524) (type solid))
 		(fill (color 0 0 0 0.0000))
-		(uuid "66ba19a6-573b-4ddf-983d-0e8b78f23569")
+		(uuid "be777ca7-7faf-48fb-8a83-75cc9a7392c3")
 		(property "Sheetname" "HaLow_Radio_MM8108" (at 95 39.36 0) (effects (font (size 1.27 1.27)) (justify left bottom)))
 		(property "Sheetfile" "halow_radio.kicad_sch" (at 95 75.5 0) (effects (font (size 1.27 1.27)) (justify left top)))
 		(instances
 			(project "PiZero2W-MANET-HAT"
-				(path "/43aba5d6-287a-403e-b882-7bbb3efed6d8" (page "3"))
+				(path "/68fac97a-3676-4757-ad4a-dceea239e277" (page "3"))
 			)
 		)
 	)
@@ -54,12 +54,12 @@
 		(fields_autoplaced yes)
 		(stroke (width 0.1524) (type solid))
 		(fill (color 0 0 0 0.0000))
-		(uuid "2adbc2fa-962d-43bd-b2f1-8f69886f0c02")
-		(property "Sheetname" "PA_Frontend_E21" (at 160 39.36 0) (effects (font (size 1.27 1.27)) (justify left bottom)))
+		(uuid "87aa507d-f86e-440c-b516-84bdeac3aecc")
+		(property "Sheetname" "RF_Out_Antenna" (at 160 39.36 0) (effects (font (size 1.27 1.27)) (justify left bottom)))
 		(property "Sheetfile" "pa_frontend.kicad_sch" (at 160 75.5 0) (effects (font (size 1.27 1.27)) (justify left top)))
 		(instances
 			(project "PiZero2W-MANET-HAT"
-				(path "/43aba5d6-287a-403e-b882-7bbb3efed6d8" (page "4"))
+				(path "/68fac97a-3676-4757-ad4a-dceea239e277" (page "4"))
 			)
 		)
 	)
@@ -73,12 +73,12 @@
 		(fields_autoplaced yes)
 		(stroke (width 0.1524) (type solid))
 		(fill (color 0 0 0 0.0000))
-		(uuid "cc467e74-ced7-4704-a1f8-091234eb8cc5")
+		(uuid "7ecd70fa-b1c8-43e2-b73c-6929fe513de5")
 		(property "Sheetname" "GNSS_RTC" (at 30 94.36 0) (effects (font (size 1.27 1.27)) (justify left bottom)))
 		(property "Sheetfile" "gnss.kicad_sch" (at 30 130.5 0) (effects (font (size 1.27 1.27)) (justify left top)))
 		(instances
 			(project "PiZero2W-MANET-HAT"
-				(path "/43aba5d6-287a-403e-b882-7bbb3efed6d8" (page "5"))
+				(path "/68fac97a-3676-4757-ad4a-dceea239e277" (page "5"))
 			)
 		)
 	)
@@ -92,12 +92,12 @@
 		(fields_autoplaced yes)
 		(stroke (width 0.1524) (type solid))
 		(fill (color 0 0 0 0.0000))
-		(uuid "8dbee509-4d73-4f92-8c8c-f5e33ebdd9d3")
+		(uuid "3fe4151f-30e7-4eea-b639-aa0d8738c8ee")
 		(property "Sheetname" "Header_EEPROM" (at 95 94.36 0) (effects (font (size 1.27 1.27)) (justify left bottom)))
 		(property "Sheetfile" "header_eeprom.kicad_sch" (at 95 130.5 0) (effects (font (size 1.27 1.27)) (justify left top)))
 		(instances
 			(project "PiZero2W-MANET-HAT"
-				(path "/43aba5d6-287a-403e-b882-7bbb3efed6d8" (page "6"))
+				(path "/68fac97a-3676-4757-ad4a-dceea239e277" (page "6"))
 			)
 		)
 	)

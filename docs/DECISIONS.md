@@ -29,9 +29,11 @@ Pi's 40-pin header (SDIO is used by the SD card + onboard Wi-Fi; USB is not on t
 header). Accepted trade-off: SPI caps throughput below HaLow's max raw rate, but
 it needs no hub/cable and keeps the HAT a single top board.
 
-### A3. PA powered by **buck-boost from header 5 V**
-Per spec. Holds the PA rail regulated through the 5 V sag caused by TX current
-bursts. See [`POWER.md`](POWER.md).
+### A3. PA powered by **buck-boost from header 5 V** — **superseded (see B11)**
+Was required for the external E21 PA's 5 V rail. The **MM8108-M20** integrates the
+PA at the module supply, and the **MF15457 fallback** has no external PA, so the
+5 V buck-boost (`U4`/`VPA`) is **removed** from the active design. The header still
+feeds the 3V3 buck through the inrush switch. See [`POWER.md`](POWER.md).
 
 ### A4. GNSS on **UART + PPS** (I²C alternate)
 UART0 for NMEA/UBX + a GPIO for 1 PPS time sync; I²C kept available (UART+I²C
@@ -48,9 +50,10 @@ with named nets — not a finished/routed board.
 The MM8108 SPI lines and control GPIOs match the OpenMANET Pi Zero 2 W SPI
 variant exactly (**CS0=GPIO8, RESET=GPIO17, power=GPIO23/24, IRQ=GPIO5, SPI0 @
 20 MHz, `morse,mm610x-spi`**) so OpenMANET firmware runs with no changes — only
-this board's device-tree overlay is added. The board-specific addition (external
-E21 PA front-end) is transparent to the SPI/control interface; see risks B2/B3/B5
-and [`../firmware/openmanet/README.md`](../firmware/openmanet/README.md).
+this board's device-tree overlay is added. This applies to the **MF15457
+fallback** today; the **MM8108-M20** is the same MM8108 SPI stack but needs its own
+**BCF** (and OpenMANET M20 support, TBD — B11). See
+[`../firmware/openmanet/README.md`](../firmware/openmanet/README.md).
 > Confirm the kernel `compatible` string of the *specific* OpenMANET build you
 > flash (`morse,mm610x-spi` vs an `mm8108`-specific string) and update the overlay
 > if needed.
@@ -64,43 +67,45 @@ and [`../firmware/openmanet/README.md`](../firmware/openmanet/README.md).
 | # | Item | Why it matters | Action |
 |---|------|----------------|--------|
 | B1 | ~~MM8108 NDA-gated~~ **RESOLVED** | — | Using the **MF15457 module**: self-contained, only VBAT/VBAT_TX/VDDIO 3.0–3.6 V, internal clock, no external SoC inductors/rails, no strict sequencing |
-| B2 | **Module has integrated PA + single ANT, no FEM tap** | The external E21 cannot tap a pre-PA RF port; it must cascade off the module's +22…+25.5 dBm ANT output | Cascade module ANT → pad → E21 `PIN`; accept ~+5–8 dB net system gain; **recertify** end product at +30 dBm |
-| B3 | **MM8108 → E21 drive level** — refined | Module +22…+25.5 dBm vs E21 +20 dBm target | Add a **fixed ~3–5 dB pad** (RN1) at E21 `PIN`; confirm against hottest BW/MCS so E21 input stays ≤ spec |
-| B4 | **VPA = 5.0 V** — RESOLVED | E21 needs 4.75–5.25 V, ~620 mA TX | Buck-boost output = **5.0 V**; bulk for the 620 mA burst |
-| B5 | **E21 T/R control** (Variant B only) | Only relevant when the E21 is populated | Custom BCF exposing a FEM/TXRX GPIO → E21 TX_EN/RX_EN; not needed for the default build |
-| B10 | **E21 kept as DNP/optional** — RESOLVED | Ground/handheld/vehicle (NLOS) deployment: +3 dB buys only ~20 % range vs ~620 mA + heat + recert + RX-rate risk | **Default build = module-only (~27 dBm BCF, low power, certified path)**; E21 + buck-boost + LPF + T/R are a DNP **Variant B** with an RF bypass — see §C |
-| B6 | 900 MHz PA ↔ GNSS coexistence | +30 dBm beside a GNSS RX on 65×30 mm | Opposite-end U.FL, ground fencing, **RF shield cans**, optional GNSS pre-filter; validate C/N₀ with PA keyed |
+| B11 | **Radio = MM8108-M20 primary, MF15457 fallback** — RESOLVED (direction) | M20 = certified, integrated 28.5 dBm PA + SAW; ~same range as the old +30 dBm E21 plan with none of the integration/cert pain. Sourcing is *uncertain* (sampling to certified partners), so MF15457 keeps the board buildable today | **Retire the external E21** (and its VPA/LPF/T-R/bypass). Same radio site + SPI nets accept either module. **Gating:** M20 datasheet (pinout/power/footprint), sourcing, OpenMANET M20 BCF. See [`MODULE_OPTIONS.md`](MODULE_OPTIONS.md), §C |
+| ~~B2–B5, B10~~ | **External-E21 issues — RETIRED** | All were E21-specific (FEM tap, drive pad, VPA 5 V, T/R control, DNP-optional) | Dropped with B11; the integrated/fallback modules need none of them |
+| B6 | 900 MHz radio ↔ GNSS coexistence | ~27–28.5 dBm beside a GNSS RX on 65×30 mm | Opposite-end U.FL, ground fencing, **RF shield cans**, optional GNSS pre-filter; validate C/N₀ with radio keyed |
 | B7 | Bottom-side clearance to Pi | Pi connectors/SD/camera/RF-can | Build keepouts from the Pi Zero 2 W DXF; taller header/standoffs if needed |
 | B8 | Header position exactness | Must mate with Pi Zero 2 W | Place real 2×20 footprint at DXF-exact location (scaffold = nominal `VERIFY`) |
-| B9 | Upstream 5 V capacity, **cert**, inrush | PA+module+Pi current; +30 dBm power/duty limits; bulk-cap inrush can brown out the Pi | Spec ≥3 A supply; **soft-start load switch** on +5 V; **recertify** end product (FCC 15.247 / ETSI EN 300 220) |
+| B9 | Upstream 5 V capacity + inrush | Radio+Pi current; bulk-cap inrush can brown out the Pi | Spec ≥3 A supply; **soft-start load switch** on +5 V. M20 is FCC/IC certified (cert burden largely removed vs the old +30 dBm recert) |
+| B12 | **M20 datasheet unknowns** | Pinout, supply rails/current, exact footprint, SPI control lines all TBD until Morse publishes | Hold the M20 radio schematic at placeholder; keep MF15457 pin-level detail as the buildable baseline; finalize M20 on datasheet |
 
-## C. Assembly variants (single PCB, two BOM builds)
+## C. Radio build options (one radio site, two module choices)
 
-One board layout; the E21 high-power path is depopulated by default.
+The external E21 PA path is **retired**. The board carries **one HaLow radio site**
+fed by the same SPI/control nets; either module populates it. Full comparison:
+[`MODULE_OPTIONS.md`](MODULE_OPTIONS.md).
 
-| Block | Variant A — **Standard (default)** | Variant B — **Extended-range (optional)** |
-|-------|-----------------------------------|-------------------------------------------|
-| TX power | module **~27 dBm** (OpenMANET BCF) | E21 **~30 dBm** |
-| E21 (U2), drive pad (RN1), 900 MHz LPF (FL2) | **DNP** | populate |
-| Buck-boost VPA (U4) + bulk | **DNP** | populate |
-| Module ANT → U.FL #2 | **`C_BYP` RF bypass populated** (ANT straight to U.FL) | bypass removed; routed through E21 |
-| PA T/R (module GPIO → TX_EN/RX_EN) | unused (pull-downs hold E21 off) | custom BCF FEM GPIO (B5) |
-| Power | 3V3 only (module+GNSS+RTC) — **low power, good for battery handhelds** | + VPA path (~620 mA TX) |
-| Certification | module modular cert (w/ chosen antenna) | **end-product recert at +30 dBm** |
+| | **Primary — MM8108-M20** | **Fallback — MM8108-MF15457** |
+|--|--------------------------|-------------------------------|
+| TX power | **~28.5 dBm** (integrated PA) | **~27 dBm** (OpenMANET BCF) |
+| PA / filter | integrated PA + 902–928 SAW | module internal PA |
+| Certification | **FCC/IC certified** | module modular cert |
+| Host | SPI (also SDIO/USB) | SPI |
+| Firmware | needs **M20 BCF** (OpenMANET TBD) | **OpenMANET today** (`bcf_mf15457`) |
+| Size | 18.5 × 14 mm | MF15457 footprint |
+| Extra rails | none (PA at module rail) — **TBD** | none |
+| Availability | **sampling, partners only** | available now |
+| Status | **design target**; pinout/power TBD (B12) | **buildable baseline now** |
 
-Rationale: the chosen deployment is **ground / handheld / vehicle (NLOS)**, where
-+3 dB ≈ +20 % range ([`LINK_BUDGET.md`](LINK_BUDGET.md)) doesn't justify the
-power/heat/cert/RX-risk by default. Variant B stays a no-respin option for fixed or
-elevated LoS nodes.
-
-> The RF bypass should be a true 50 Ω hand-off (series cap / RF jumper across the
-> E21 in/out lands), not a DC-only 0 Ω, so the depopulated path stays matched.
+Why this split: M20 gets ~the same range as the old +30 dBm E21 plan as a single
+certified part — no buck-boost, no LPF, no T/R-control problem, no recert, smaller
+board. But sourcing is uncertain and there's no datasheet yet, so **MF15457 stays
+the build-today baseline** and the M20 drops into the same site once it lands.
+Region note: M20-US is **902–928 only** (fine for the US/Canada MANET target).
 
 ## D. Suggested implementation order
-1. **B1/B2 resolved** (MF15457 module). Build the **Variant A** default first.
-2. Finalize the 3V3 power + module + GNSS + RTC schematic (no VPA needed for A).
+1. **B11/B12:** lay out the radio site + SPI/control nets so either module fits;
+   build to **MF15457** (buildable today) as the baseline.
+2. Finalize 3V3 power + radio + GNSS + RTC (no VPA / buck-boost anymore).
 3. Draw schematics over the scaffold sheets; pull real symbols/footprints.
 4. Place to the [`MECHANICAL.md`](MECHANICAL.md) two-sided plan; build Pi keepouts.
-   Reserve the E21/VPA area + bypass so Variant B needs no respin.
-5. Route 50 Ω RF first (incl. the bypass hand-off), then power, then digital.
-6. Variant-B bring-up only: drive level (**B3**), BCF T/R (**B5**), coexistence (**B6**).
+   The retired E21/VPA frees board area.
+5. Route 50 Ω RF (radio ANT → U.FL), then power, then digital.
+6. When the **M20 datasheet** publishes: finalize its footprint/power, confirm
+   sourcing + OpenMANET M20 BCF, then swap it into the radio site.

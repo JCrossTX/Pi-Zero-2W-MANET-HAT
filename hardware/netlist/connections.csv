@@ -1,11 +1,8 @@
 net,from_ref,from_pin,to_ref,to_pin,class,notes
 +5V,J1,2,U10,VIN,power,header 5V -> inrush load switch
 +5V,J1,4,U10,VIN,power,parallel 5V feed
-+5V_SW,U10,VOUT,U4,VIN,power,soft-started 5V -> buck-boost in
-+5V_SW,U10,VOUT,U5,VIN,power,soft-started 5V -> 3V3 reg in
++5V_SW,U10,VOUT,U5,VIN,power,soft-started 5V -> 3V3 reg in (E21/buck-boost retired)
 GND,J1,6,*,GND,power,common ground (pins 6/9/14/20/25/30/34/39)
-VPA,U4,VOUT,U2,VCC,power,buck-boost 5.0V -> E21 VCC (pin1); 4.75-5.25V
-VPA,U4,VOUT,C30,1,power,bulk 100uF + 10/0.1/0.01uF for ~620mA TX burst
 +3V3,U5,VOUT,U12,VIN,power,3V3 -> radio-rail load switch
 +3V3_RAD,U12,VOUT,U1,VBAT,power,module VBAT (pin10) 3.0-3.6V
 +3V3_RAD,U12,VOUT,U1,VBAT_TX,power,module VBAT_TX (pin24); ~330mA TX burst
@@ -22,16 +19,8 @@ MM_IRQ,J1,29,U1,14,gpio,GPIO5 -> module SPI_INT (pin14) (OpenMANET spi-irq-gpios
 MM_RESET_N,J1,11,U1,4,gpio,GPIO17 + supervisor U11 -> module RESET_N (pin4)
 MM_PWR1,J1,16,U12,EN,gpio,GPIO23 -> radio-rail load switch enable (power-gpios)
 MM_PWR2,J1,18,U1,5,gpio,GPIO24 -> module WAKE (pin5) (power-gpios)
-RF_900,U1,2,C_BYP,1,rf,VARIANT A (default): module ANT -> RF bypass -> U.FL2 (E21 DNP)
-ANT_900,C_BYP,2,J3,1,rf,VARIANT A bypass hand-off to U.FL #2 (50R series cap/jumper)
-RF_900,U1,2,RN1,1,rf,VARIANT B: module ANT (+22..+25.5dBm) -> drive pad
-RF_900,RN1,2,U2,6,rf,pad out -> E21 PIN (pin6) transceiver side, 50R (C34 DC-block)
-ANT_900,U2,9,FL2,1,rf,E21 ANT (pin9) -> harmonic LPF (C35 DC-block)
-ANT_900,FL2,2,J3,1,rf,LPF -> U.FL #2 (900 MHz); D30 ESD
-PA_TX_CTL,U1,32,U2,3,gpio,module GPIO0 -> E21 TX_EN (pin3); OpenMANET FW; R33 pulldown
-PA_RX_CTL,U1,31,U2,4,gpio,module GPIO1 -> E21 RX_EN (pin4); OpenMANET FW; R34 pulldown
-FEM_TXEN_FB,J1,7,U2,3,gpio,DNP Pi-GPIO fallback GPIO4 -> TX_EN (0R option)
-FEM_RXEN_FB,J1,31,U2,4,gpio,DNP Pi-GPIO fallback GPIO6 -> RX_EN (0R option)
+RF_900,U1,2,C35,1,rf,radio ANT (M20 integ.PA / MF15457 ~27dBm) -> C35 DC-block
+ANT_900,C35,2,J3,1,rf,DC-block -> ANT_900 -> U.FL #2; FL2 LPF=DNP; D30 ESD
 GNSS_RXD,J1,8,U3,21,uart,GPIO14 Pi TXD0 -> GNSS RXD (pin21)
 GNSS_TXD,J1,10,U3,20,uart,GPIO15 GNSS TXD (pin20) -> Pi RXD0
 GNSS_PPS,J1,12,U3,TIMEPULSE,gpio,GPIO18 1 PPS time sync (disciplines RTC)
@@ -49,6 +38,6 @@ ANT_BIAS,U3,VCC_RF,J2,1,power,NEO-M9N VCC_RF (pin9) -> L40 bias -> U.FL center
 ID_SD,J1,27,U6,SDA,i2c,HAT ID EEPROM data
 ID_SC,J1,28,U6,SCL,i2c,HAT ID EEPROM clock
 LED_FIX,J1,32,D_FIX,A,gpio,GPIO12 -> GNSS-fix LED (R72 1k)
-LED_TX,U2,3,D_TX,A,ind,PA TX_EN -> TX-active LED (R71 1k)
+LED_TX,J1,33,D_TX,A,gpio,host GPIO13 -> TX-active LED (R71 1k); E21 source retired
 LED_PWR,U5,VOUT,D_PWR,A,ind,+3V3 -> power-good LED (R70 1k)
 3V3_PI,J1,17,NET,REF,power,Pi 3V3 reference (and EEPROM supply)

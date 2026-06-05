@@ -1,7 +1,9 @@
-# Range & Throughput Analysis — Module Alone vs. Module + E21
+# Range & Throughput Analysis — by TX power / data rate
 
-Quantifies what the external **E21-900G30S** PA buys over the **MM8108-MF15457**
-module alone, using the module's own datasheet rate/sensitivity/TX tables.
+Quantifies range vs TX power using the **MM8108-MF15457** datasheet
+rate/sensitivity/TX tables. The external E21 columns are retained as the analysis
+that **led to retiring it** (B11); the **chosen radio is now the MM8108-M20** at
+~28.5 dBm — see §8 and [`MODULE_OPTIONS.md`](MODULE_OPTIONS.md).
 
 ## 1. Assumptions
 - Band 915 MHz. Antennas **Gt = Gr = 2 dBi** (small whip/U.FL). **Fade margin
@@ -85,5 +87,22 @@ multiplier compounds). **Where it isn't:** short-range or **high-throughput**
 swamped by environment and the RX/cert/thermal costs dominate.
 
 The single biggest *free* win is already the **OpenMANET BCF (~27 dBm)** — that's
-+2–5 dB over the IEEE default at no hardware cost. The E21 is the expensive,
++2–5 dB over the IEEE default at no hardware cost. The E21 was the expensive,
 conditional last +3 dB.
+
+## 8. Chosen radio: MM8108-M20 (~28.5 dBm, integrated + certified)
+The M20 reaches **28.5 dBm** — about **+1.5 dB over the BCF ~27 dBm** baseline and
+only **~1.5 dB below** the old +30 dBm E21 plan — but as a single **FCC/IC-certified
+integrated module** with none of the E21's RX-rate risk, ~620 mA PA draw, heat,
+recert, or T/R-control burden.
+
+| | MF15457 (BCF ~27) | **MM8108-M20 ~28.5** | (retired) +E21 ~30 |
+|--|-------------------|----------------------|--------------------|
+| Range vs BCF, n=3.5 | baseline | **+~10 %** (TX, robust MCS) | +20–25 % |
+| Range vs BCF, LoS | baseline | **+~18 %** | +40 % |
+| RX side | baseline | **no regression** (integrated) | 0…+3 dB, **risk** |
+| Cost | — | certified module, simpler board | recert, T/R, heat, RX risk |
+
+So the M20 captures most of the realistic NLOS range benefit the E21 promised,
+without the downside that made the E21 not worth populating by default. The
+MF15457 remains the buildable-today fallback at ~27 dBm.

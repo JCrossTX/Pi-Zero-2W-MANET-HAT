@@ -93,10 +93,11 @@
 };
 
 /*
- * NOTE on the external E21 PA T/R control:
- * The MM8108-MF15457 module exposes no hardware TX/RX FEM line. To switch the
- * E21 in sync with bursts, OpenMANET firmware must toggle module GPIO0/GPIO1
- * (PA_TX_CTL / PA_RX_CTL). If the firmware build does not support a PA-enable
- * GPIO, populate the on-board RF-sense auto-T/R circuit instead (see
- * docs/COMPONENTS_GAP.md N4). Pull-downs keep the E21 in Shutdown by default.
+ * NOTE on the radio module (DECISIONS.md B11):
+ * The external E21 PA is retired. The radio is an integrated MM8108 module --
+ * MM8108-M20 (primary, integrated PA + SAW, ~28.5 dBm) or MM8108-MF15457
+ * (fallback, ~27 dBm) -- which handles TX/RX switching internally, so there are
+ * no external FEM/T-R GPIOs. This overlay's SPI/control map is identical for
+ * both. The M20 requires its own BCF (OpenMANET M20 support TBD); MF15457 runs
+ * OpenMANET's bcf_mf15457 today.
  */

@@ -103,17 +103,16 @@ def build_pcb():
         ("MANET HAT - Pi Zero 2W (TOP)", 18.0, 11.5, 1.0),
         ("NEO-M9N", 10.5, 16.0, 0.9),
         ("U.FL1 GNSS", 2.0, 22.0, 0.7),
-        ("E21 PA 1W (Variant B / DNP)", 36.0, 16.0, 0.8),
-        ("U.FL2 900MHz", 50.0, 22.0, 0.7),
+        ("MM8108-M20 radio (MF15457 fallback)", 33.0, 16.0, 0.8),
+        ("U.FL2 900MHz", 52.0, 22.0, 0.7),
         ("4-layer recommended", 19.0, 26.5, 0.7),
     ]
     for txt, x, y, sz in f_silk:
         a(f'\t(gr_text "{txt}" (at {x} {y} 0) (layer "F.SilkS") (uuid "{u()}") '
           f'(effects (font (size {sz} {sz}) (thickness 0.12)) (justify left)))')
     b_silk = [
-        ("MM8108 + RF match (BTM)", 30.0, 12.0, 0.9),
-        ("BUCK-BOOST / 3V3 (BTM)", 30.0, 18.0, 0.9),
-        ("EEPROM (BTM)", 30.0, 23.0, 0.8),
+        ("3V3 BUCK + PWR MGMT (BTM)", 30.0, 14.0, 0.9),
+        ("RTC + EEPROM (BTM)", 30.0, 20.0, 0.8),
         ("KEEPOUT: Pi HDMI/USB/SD/cam/RF-can", 30.0, 26.5, 0.7),
     ]
     for txt, x, y, sz in b_silk:
@@ -131,30 +130,28 @@ SHEETS = [
     ("Power", "power.kicad_sch",
      "POWER + PWR MGMT (see docs/SCHEMATIC.md S1,S6,S7)\\n"
      "5V -> U10 inrush sw -> U5 buck -> +3V3 ; U12 load sw -> +3V3_RAD.\\n"
-     "VARIANT B only: U4 buck-boost -> VPA=5.0V for E21 (DNP in default).\\n"
-     "FB1 -> +3V3_GNSS. U11 supervisor -> RESET_N. LEDs. 3V3_PI=ref+EEPROM.",
-     "Refdes: U4/U5 regs; U10 inrush; U11 supervisor; U12 load sw; L1/L2; "
-     "C1-C10; FB1; R10-R14 FB; D1 TVS; D_PWR/D_TX/D_FIX + R70-72",
-     ["+5V", "+5V_SW", "GND", "VPA", "+3V3", "+3V3_RAD", "+3V3_GNSS", "3V3_PI",
+     "VPA/buck-boost REMOVED (E21 retired, B11). FB1 -> +3V3_GNSS.\\n"
+     "U11 supervisor -> RESET_N. LEDs. 3V3_PI = ref + EEPROM.",
+     "Refdes: U5 buck; U10 inrush; U11 supervisor; U12 load sw; L2; "
+     "C1-C10; FB1; R13-R14 FB; D1 TVS; D_PWR/D_TX/D_FIX + R70-72",
+     ["+5V", "+5V_SW", "GND", "+3V3", "+3V3_RAD", "+3V3_GNSS", "3V3_PI",
       "MM_PWR1", "MM_RESET_N", "LED_PWR", "LED_TX", "LED_FIX"]),
     ("HaLow_Radio_MM8108", "halow_radio.kicad_sch",
-     "MM8108-MF15457 module U1 (38-pin, self-contained, SPI host).\\n"
-     "Power: VBAT(10)/VBAT_TX(24)/VDDIO(22) = +3V3_RAD. Single ANT(2).\\n"
+     "MM8108 radio site -- PRIMARY MM8108-M20 (integ. 28.5dBm PA+SAW, cert,\\n"
+     "  18.5x14mm; pinout/power TBD per datasheet, B12). FALLBACK MF15457.\\n"
+     "Power: VBAT(10)/VBAT_TX(24)/VDDIO(22)=+3V3_RAD (MF15457 pins shown).\\n"
      "SPI: MOSI16/MISO12/SCK17/CS13; INT14->IRQ; RST_N(4); WAKE(5).\\n"
-     "ANT(2)->RF_900->E21. GPIO0(32)/GPIO1(31)->PA_TX/RX_CTL (OpenMANET FW).",
-     "Refdes: U1 MF15457; R20-R23 SPI term; R24-R27 10k SDIO/SPI pulls; dec",
+     "ANT(2)->RF_900->J3 U.FL2 (no external PA). GPIO0/1 = spare test pads.",
+     "Refdes: U1 MM8108 module; R20-R23 SPI term; R24-R27 10k pulls; dec",
      ["SPI_MOSI", "SPI_MISO", "SPI_SCLK", "SPI_CS_MM", "MM_IRQ",
-      "MM_RESET_N", "MM_PWR2", "+3V3_RAD", "GND",
-      "RF_900", "PA_TX_CTL", "PA_RX_CTL"]),
-    ("PA_Frontend_E21", "pa_frontend.kicad_sch",
-     "E21-900G30S U2 -- VARIANT B (DNP DEFAULT). +30dBm extended-range opt.\\n"
-     "Variant A (default): module ANT -> C_BYP RF bypass -> J3 U.FL2 (no PA).\\n"
-     "Variant B: RF_900 -> C34 -> RN1 ~3-5dB pad -> PIN(6); ANT(9)->FL2->U.FL2.\\n"
-     "TX_EN(3)/RX_EN(4) <- PA_TX/RX_CTL (BCF); R33/R34 pulldown=off default.",
-     "Refdes: U2 E21; C_BYP bypass(VarA); J3 U.FL; FL2 LPF; RN1 pad; "
-     "C30-C35; R33-R36; D30 ESD",
-     ["RF_900", "ANT_900", "C_BYP", "PA_TX_CTL", "PA_RX_CTL", "VPA", "GND",
-      "FEM_TXEN_FB", "FEM_RXEN_FB"]),
+      "MM_RESET_N", "MM_PWR2", "+3V3_RAD", "GND", "RF_900"]),
+    ("RF_Out_Antenna", "pa_frontend.kicad_sch",
+     "900MHz RF OUTPUT / ANTENNA (E21 PA retired, B11).\\n"
+     "Radio ANT -> RF_900 -> C35 100pF DC-block -> ANT_900 -> J3 U.FL2.\\n"
+     "FL2 optional LPF = DNP (M20 has integ. SAW; MF15457 modular-certified).\\n"
+     "D30 low-C RF ESD clamp at the connector. Short 50ohm microstrip.",
+     "Refdes: J3 U.FL; C35 DC-block; FL2 LPF(DNP); D30 ESD",
+     ["RF_900", "ANT_900", "GND"]),
     ("GNSS_RTC", "gnss.kicad_sch",
      "u-blox NEO-M9N U3 (UART0 + 1PPS GPIO18, I2C1). VCC via FB1.\\n"
      "RF_GNSS <- J2 U.FL1 -> C44 -> RF_IN(11); VCC_RF(9) -> L40 bias; D8 ESD.\\n"
@@ -173,8 +170,7 @@ SHEETS = [
       "SPI_MOSI", "SPI_MISO", "SPI_SCLK", "SPI_CS_MM",
       "MM_IRQ", "MM_RESET_N", "MM_PWR1", "MM_PWR2",
       "GNSS_RXD", "GNSS_TXD", "GNSS_PPS", "GNSS_SDA", "GNSS_SCL",
-      "GNSS_RESET_N", "GNSS_EXTINT", "RTC_INT", "LED_FIX",
-      "FEM_TXEN_FB", "FEM_RXEN_FB"]),
+      "GNSS_RESET_N", "GNSS_EXTINT", "RTC_INT", "LED_FIX", "LED_TX"]),
 ]
 
 
@@ -221,8 +217,8 @@ def build_root(sheet_meta):
     a('\t(paper "A4")')
     a("\t(lib_symbols)")
     a('\t(text "Pi Zero 2W MANET HAT - root sheet\\n'
-      'HaLow (MM8108/SPI, OpenMANET-compatible) + E21 1W PA + NEO-M9N GNSS.\\n'
-      'See docs/ for full design. Sub-sheets carry named nets; add symbols next." '
+      'HaLow MM8108-M20 (primary) / MF15457 (fallback), SPI + NEO-M9N GNSS.\\n'
+      'External E21 PA retired (B11). Sub-sheets carry named nets; add symbols next." '
       f'(exclude_from_sim no) (at 20 12 0) '
       f'(effects (font (size 1.5 1.5)) (justify left top)) (uuid "{u()}"))')
     # place hierarchical sheet boxes

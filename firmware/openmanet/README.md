@@ -39,12 +39,13 @@ sudo cp manet-hat.dtbo /boot/firmware/overlays/
 ```
 
 ## Hardware difference vs. stock OpenMANET nodes
-Stock OpenMANET Pi Zero 2 W setups use a module with an **internal** PA. This HAT
-adds an **external E21-900G30S 1 W PA/LNA front-end** on the MM8108 RF path. That
-changes nothing on the SPI/control side, but it does require:
-1. an MM8108 configured for an **external FEM** RF path, and
-2. the E21 T/R switch driven by the **MM8108 FEM-control outputs** (on-board, not
-   via the header).
+This HAT uses an integrated high-power MM8108 module (no external PA — the E21 was
+retired, B11):
+- **MF15457 fallback** — runs stock OpenMANET unchanged with `bcf_mf15457`; the
+  SPI/control map here is exactly the OpenMANET Pi Zero 2 W SPI variant.
+- **MM8108-M20 primary** — same MM8108 SPI stack, but needs its **own BCF** for the
+  integrated PA (OpenMANET M20 support TBD). This overlay is unchanged either way.
 
-See [`../../docs/RF.md`](../../docs/RF.md) and
-[`../../docs/DECISIONS.md`](../../docs/DECISIONS.md) (risks B2, B3, B5).
+See [`../../docs/RF.md`](../../docs/RF.md),
+[`../../docs/MODULE_OPTIONS.md`](../../docs/MODULE_OPTIONS.md) and
+[`../../docs/DECISIONS.md`](../../docs/DECISIONS.md) (B11/B12).

@@ -5,7 +5,7 @@
 - **Perimeter: 65.0 × 30.0 mm** — identical to the Raspberry Pi Zero 2 W.
 - Corner radius **3.0 mm** (matches the Pi Zero outline).
 - 2-layer minimum recommended; **4-layer** preferred for clean 50 Ω RF + a solid
-  ground plane (strongly advised given the 1 W PA + GNSS coexistence). See
+  ground plane (advised given the high-power radio + GNSS coexistence). See
   [`POWER.md`](POWER.md)/[`RF.md`](RF.md).
 
 Origin convention used in the KiCad scaffold: **(0,0) = top-left**, X right, Y
@@ -39,21 +39,22 @@ Same 4-hole pattern as the Pi Zero 2 W:
 
 ## 4. Two-sided placement plan
 
-The board is *small* and the E21 module alone is ~27.5 × 18 mm, so both sides are
-used. **Top** = the side facing away from the Pi; **Bottom** = the side facing the
-Pi (clearance-limited).
+Retiring the external E21 (~27.5 × 18 mm) frees significant area — the radio is now
+a single ~18.5 × 14 mm (M20) / MF15457-footprint module. Both sides are still used.
+**Top** = the side facing away from the Pi; **Bottom** = the side facing the Pi
+(clearance-limited).
 
 ### Top side (away from Pi — no clearance limit)
 - **40-pin female header** along the top long edge (mounts through; body on top,
   receptacle mates downward onto the Pi).
-- **E21-900G30S** PA module (largest part) — gets the most area; near U.FL #2.
-- **NEO-M9N** GNSS — opposite end from the PA for isolation; near U.FL #1.
+- **MM8108 radio** (M20 primary / MF15457 fallback) with its RF match — near
+  U.FL #2; gets a ground-flooded, shield-ready zone and thermal vias (M20 PA).
+- **NEO-M9N** GNSS — opposite end from the radio for isolation; near U.FL #1.
 - **U.FL #1 (GNSS)** and **U.FL #2 (900 MHz)** at **opposite board edges**.
 
 ### Bottom side (faces the Pi — keep low-profile, avoid Pi tall parts)
-- **MM8108** + RF matching (low BGA, fits the gap).
-- **Buck-boost** + **3V3 regulator** + bulk caps (keep switch node away from RF).
-- **ID EEPROM** and small passives.
+- **3V3 regulator** + inrush/load switches + bulk caps (keep switch node off RF).
+- **RV-3028 RTC** + backup cell, **ID EEPROM**, and small passives.
 
 > **Bottom-side clearance:** with a standard 2×20 female header the HAT-to-Pi gap
 > is only a couple of mm. Bottom components must be **low-profile** and must avoid
@@ -72,8 +73,8 @@ Pi (clearance-limited).
   +------------------------------------+      +------------------------------------+
   | [====== 40-pin female header =====]|      |  (header receptacle protrudes)     |
   |                                    |      |                                    |
-  | U.FL#1   [ NEO-M9N ]      [ E21  ] |      |  [buck-boost] [3V3]   [ MM8108 ]   |
-  | (GNSS)                    [ PA   ] |      |  [bulk caps]          [RF match]   |
+  | U.FL#1   [ NEO-M9N ]   [ MM8108  ] |      |  [3V3 buck] [inrush/load sw]       |
+  | (GNSS)                 [ radio   ] |      |  [bulk caps]  [RTC + cell]         |
   |                          U.FL#2    |      |  [EEPROM]   (keepouts: HDMI/USB/   |
   | o H3                       H4 o    |      |   o          SD/camera/RF-can)  o  |
   +------------------------------------+      +------------------------------------+

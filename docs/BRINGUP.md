@@ -1,19 +1,20 @@
 # Board Bring-Up & Test Plan
 
-Stage-gated power-on so a fault in one block can't damage another (especially the
-1 W PA). Do **not** key the PA until stages 1–4 pass.
+Stage-gated power-on so a fault in one block can't damage another. The external
+1 W PA is retired (B11) — the radio module integrates its own PA.
 
 ## Stage 0 — Bare-board / pre-power
-- [ ] Visual + DFM: no shorts on `+5V`/`VPA`/`+3V3` to `GND` (ohm-meter).
+- [ ] Visual + DFM: no shorts on `+5V`/`+3V3` to `GND` (ohm-meter).
 - [ ] Confirm 40-pin footprint aligns to a real Pi Zero 2 W (dry-fit, no power).
 - [ ] Check bottom-side clearance vs the Pi's HDMI/USB/SD/camera/RF-can.
 
 ## Stage 1 — Power rails (HAT off the Pi, bench 5 V, current-limited ~0.3 A)
-- [ ] Inject 5 V on the header `+5V`/`GND`. Confirm `VPA` = target (≈5.0 V, or per
-      E21 datasheet) and `+3V3` = 3.30 V ±3%. Check ripple on `VPA` (< ~50 mV).
+- [ ] Inject 5 V on the header `+5V`/`GND`. Confirm `+3V3` = 3.30 V ±3% after the
+      inrush switch. Check ripple. (No `VPA`/buck-boost — E21 retired.)
 - [ ] `+3V3_GNSS` present after `FB1`. `3V3_PI` only present when fed by the Pi.
-- [ ] Load-step `VPA` (electronic load 0→0.8 A) — bulk holds the rail; no dropout
-      from the buck-boost. Validates [`POWER.md`](POWER.md) sizing.
+- [ ] Load-step `+3V3` (electronic load to the radio's TX peak) — bulk holds the
+      rail; no buck dropout. Validates [`POWER.md`](POWER.md) sizing. (Confirm the
+      M20 TX current target once its datasheet lands, B12.)
 
 ## Stage 2 — Host detect & buses (HAT on the Pi)
 - [ ] Pi boots with the HAT mounted; no brownout. Measure 5 V at the header under
@@ -28,27 +29,23 @@ Stage-gated power-on so a fault in one block can't damage another (especially th
       C/N₀ on satellites.
 - [ ] `pps-gpio` on GPIO18: `ppstest /dev/pps0` shows 1 Hz pulses; chrony locks.
 
-## Stage 4 — HaLow radio (MM8108) over SPI
-- [ ] Load the OpenMANET Morse driver against `spi0.0` (CS0/GPIO8, IRQ GPIO5,
-      reset GPIO17, power GPIO23/24). Driver probes; firmware loads.
-- [ ] `morsectrl`/iw shows the interface; scan/associate at **low power, internal
-      path or dummy load** first if the part allows — do **not** rely on the E21
-      yet.
+## Stage 4 — HaLow radio (MM8108 module) over SPI
+- [ ] Load the Morse driver against `spi0.0` (CS0/GPIO8, IRQ GPIO5, reset GPIO17,
+      power GPIO23/24). Driver probes; firmware + **BCF** load (MF15457:
+      `bcf_mf15457`; M20: its own BCF — B11).
+- [ ] `morsectrl`/iw shows the interface; scan/associate into a **50 Ω dummy load**
+      on U.FL #2 first.
 
-## Stage 5 — RF front-end (E21) — **into a 50 Ω dummy load + power meter first**
-- [ ] Confirm FEM control: `FEM_TX`/`FEM_RX` follow TX/RX bursts on a scope; both
-      never high together (Shutdown at reset = both low). ([`RF.md`](RF.md) §2.1)
-- [ ] **Drive level (B3):** measure MM8108 ext-FEM TX power into E21 `RFI`; verify
-      it's in the E21 linear input window. Populate the attenuator pad `RN1` if
-      over-driven *before* full-power TX.
-- [ ] TX into dummy load: measure output ≈ +30 dBm; check spectrum (harmonics,
-      spurs) and E21 temperature at duty.
-- [ ] RX: confirm LNA path sensitivity improvement vs internal-only.
+## Stage 5 — RF output / antenna — **into a 50 Ω dummy load + power meter first**
+- [ ] TX into dummy load: measure output ≈ **27 dBm (MF15457)** / **~28.5 dBm (M20)**
+      at the U.FL; check spectrum (harmonics, spurs) and module temperature at duty.
+- [ ] If MF15457 harmonics are marginal, populate the optional `FL2` LPF and re-check.
+- [ ] RX: confirm sensitivity meets the datasheet at representative MCS.
 
 ## Stage 6 — Antennas, coexistence, range
-- [ ] Swap dummy load for U.FL #2 antenna (legal antenna/power for region —
+- [ ] Swap dummy load for U.FL #2 antenna (legal antenna/power for 902–928 region —
       [`RF.md`](RF.md) §5).
-- [ ] **Coexistence (B6):** key the PA at full power; re-check GNSS C/N₀ and fix.
+- [ ] **Coexistence (B6):** key the radio at full power; re-check GNSS C/N₀ and fix.
       If GNSS desenses, populate the GNSS pre-filter `FL1` / improve isolation.
 - [ ] OpenMANET mesh: two nodes associate; throughput + range vs link budget.
 
@@ -57,4 +54,4 @@ Bench PSU (current limit), DMM, scope (≥100 MHz), spectrum analyzer + 50 Ω
 attenuated tap / power meter, 50 Ω dummy load, GNSS antenna, thermal camera/probe.
 
 ## Cross-refs
-Risks driving these checks: [`DECISIONS.md`](DECISIONS.md) B2/B3/B5/B6/B9.
+Risks driving these checks: [`DECISIONS.md`](DECISIONS.md) B6/B9/B11/B12.

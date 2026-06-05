@@ -1,7 +1,12 @@
-# OpenMANET / Morse Firmware — External-PA Control Findings
+# OpenMANET / Morse Firmware — PA / BCF Findings
 
-Investigation of whether the OpenMANET / Morse Micro firmware can drive the
+Investigation of whether the OpenMANET / Morse Micro firmware can drive an
 external E21 PA's TX/RX (FEM) switching for the **MM8108-MF15457** module.
+
+> **Outcome (B11):** these findings — uncertain external-FEM support + a documented
+> RX-rate regression — are a big reason the **external E21 was retired** in favour
+> of the integrated **MM8108-M20** (which does its own T/R internally). See §"M20
+> firmware" below and [`MODULE_OPTIONS.md`](MODULE_OPTIONS.md).
 
 ## How GPIO/FEM function is set
 - Morse chip GPIO functions are **not fixed** — they're defined by the **firmware
@@ -40,8 +45,17 @@ known RX-rate gotcha.
 The E21 gives **+30 dBm**; OpenMANET's BCF already gives **~27 dBm** from the
 module alone. The external PA therefore adds only **~3 dB (~1.4× range)** while
 adding: uncertain/custom T/R-control support, a documented RX-rate regression
-risk, ~620 mA + heat, board area, and **FCC/IC recertification**. The trade is now
-marginal — see the decision options in the project chat / `DECISIONS.md` B5.
+risk, ~620 mA + heat, board area, and **FCC/IC recertification**. The trade was
+marginal — and the project **retired the E21** for the integrated M20 (B11).
+
+## M20 firmware (the new primary)
+The **MM8108-M20** integrates the PA and its T/R, so **none of the external-FEM
+problems above apply** — no GPIO T/R mapping, no RX-rate gotcha. It is the same
+MM8108 SPI silicon, so the OpenMANET driver/overlay path is unchanged, **but it
+needs its own BCF** characterizing the integrated PA. Open items:
+- Confirm an **M20 BCF** exists (`bcf_*` for the M20) or that Morse supplies one to
+  certified partners; OpenMANET M20 support may need to be added upstream.
+- Until then, the **MF15457 fallback runs OpenMANET today** (`bcf_mf15457.mbin`).
 
 ## Sources
 - OpenMANET firmware & docs: https://github.com/OpenMANET/firmware ,

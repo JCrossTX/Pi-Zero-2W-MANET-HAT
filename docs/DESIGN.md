@@ -5,12 +5,14 @@
 A HAT that turns a Raspberry Pi Zero 2 W into a long-range MANET node:
 
 - **Sub-GHz mesh data link** — Morse Micro **MM8108** Wi-Fi HaLow (IEEE 802.11ah)
-  operating in the ~850–950 MHz license-exempt band, boosted by an external
-  **EBYTE E21-900G30S** 1 W (30 dBm) PA + LNA front-end for multi-kilometre reach.
+  in the 902–928 MHz license-exempt band. The radio is a **high-power integrated
+  module**: primary **MM8108-M20** (integrated 28.5 dBm PA + 902–928 SAW, FCC/IC
+  certified), fallback **MM8108-MF15457** (~27 dBm). The earlier external E21 1 W
+  PA is **retired** ([`DECISIONS.md`](DECISIONS.md) B11, [`MODULE_OPTIONS.md`](MODULE_OPTIONS.md)).
 - **Position & time** — u-blox **NEO-M9N** GNSS (GPS/GLONASS/Galileo/BeiDou) with
   a **1 PPS** output for time-synchronised mesh operation.
-- Powered entirely from the Pi's **40-pin header 5 V**; the PA gets a regulated
-  rail from an onboard **buck-boost** converter.
+- Powered entirely from the Pi's **40-pin header 5 V** via a single **3V3** rail —
+  no PA buck-boost (the module integrates its PA).
 
 ## 2. System block diagram
 
@@ -25,17 +27,12 @@ flowchart LR
     FHDR["40-pin female header"]
 
     subgraph PWR["Power"]
-      BB["Buck-boost\n5V -> PA rail (VPA)"]
-      LDO["3V3 buck/LDO\n(radio + GNSS)"]
+      LDO["3V3 buck\n(radio + GNSS + RTC)"]
       BULK["Bulk caps\n(TX burst)"]
     end
 
-    subgraph RADIO["HaLow radio"]
-      MM["MM8108 SoC\n(SPI host iface)"]
-    end
-
-    subgraph FE["900 MHz front-end"]
-      PA["E21-900G30S\nPA / LNA + T/R switch"]
+    subgraph RADIO["HaLow radio (integrated PA)"]
+      MM["MM8108-M20 (primary)\nMF15457 (fallback)\nSPI host iface"]
       UFL2["U.FL #2\n(900 MHz antenna)"]
     end
 
@@ -48,19 +45,16 @@ flowchart LR
   end
 
   HDR === FHDR
-  FHDR -- "5V" --> BB
   FHDR -- "5V" --> LDO
-  BB --> PA
   LDO --> MM
   LDO --> GPS
-  BULK --- BB
+  BULK --- LDO
 
   FHDR -- "SPI0 + IRQ/RST" --> MM
   FHDR -- "UART0 + PPS / I2C" --> GPS
   FHDR -- "ID_SD/ID_SC" --> EEP
 
-  MM <-- "RF (50R), FEM TX/RX ctrl" --> PA
-  PA --- UFL2
+  MM -- "RF (50R)" --> UFL2
   GPS --- UFL1
 ```
 
@@ -75,27 +69,22 @@ flowchart LR
   SPI — the board uses OpenMANET's exact GPIO map (CS0=GPIO8, RESET=GPIO17,
   power=GPIO23/24, IRQ=GPIO5) so the stock overlay/driver runs unchanged. See
   [`../firmware/openmanet/`](../firmware/openmanet/).
-- RF port configured for an **external front-end module (FEM)** so the E21 PA/LNA
-  provides the TX power and RX gain instead of the chip's internal PA. The chip's
-  FEM-control outputs drive the E21 T/R switching (see [`RF.md`](RF.md)).
-- Needs a reference clock (crystal/TCXO), power-sequenced supplies, host SPI
-  (MOSI/MISO/SCLK/CS), a host **IRQ**, **RESET_N**, and an optional **wake** line.
+- Implemented as a **pre-certified MM8108 module** with a single 50 Ω `ANT` pin
+  **after** an integrated PA — no external front-end, no FEM-control lines. The
+  M20 also integrates a 902–928 SAW; both modules go straight to **U.FL #2**.
+- Needs only 3.3 V supply(s), host SPI (MOSI/MISO/SCLK/CS), a host **IRQ**,
+  **RESET_N**, and a **wake** line — the module integrates clock + PMU + PA.
 
-> The MM8108 detailed pinout, power-sequencing and RF reference design are
-> distributed by Morse Micro under NDA. This package treats the MM8108 as a
-> parameterised block with named nets; the exact pin assignment must be filled in
-> from the vendor reference schematic. Using a pre-certified MM8108 **module**
-> that breaks out the external-FEM RF path is the lower-risk option — see
-> [`DECISIONS.md`](DECISIONS.md).
+> The **MF15457** pinout/power are fully specified (datasheet in `hardware/`) and
+> are the buildable-today baseline. The **MM8108-M20** is the same MM8108 SPI stack
+> with a vendor-integrated PA; its detailed pinout/power await Morse's datasheet
+> (B12) and drop into the same radio site — see [`DECISIONS.md`](DECISIONS.md).
 
-### 3.2 RF front-end — E21-900G30S
-- Pure-hardware PA (up to **30 dBm / 1 W**, 850–931 MHz) with built-in **LNA** and
-  an integrated T/R switch.
-- Control: **TXEN** and **RXEN** (3.3 V logic). TX = RXEN low / TXEN high;
-  RX = RXEN high / TXEN low; both low = shutdown. These must be driven in lockstep
-  with the radio's TX/RX bursts — drive them from the **MM8108 FEM-control
-  outputs**, not slow Pi GPIO (timing detail in [`RF.md`](RF.md)).
-- RF: transceiver-side port faces the MM8108; antenna-side port goes to **U.FL #2**.
+### 3.2 900 MHz RF output / antenna
+- The chosen module's `ANT` (50 Ω) goes through a short matched microstrip + DC
+  block to **U.FL #2**. No external PA, drive pad, or T/R control (E21 retired).
+- Optional `FL2` LPF land (DNP) for MF15457 harmonic trim; the M20's integrated
+  SAW makes it unnecessary. ESD clamp at the connector. See [`RF.md`](RF.md).
 
 ### 3.3 GNSS — NEO-M9N
 - UART1 (module) ↔ Pi **UART0** for NMEA/UBX, **TIMEPULSE (1 PPS)** to a Pi GPIO.
@@ -107,10 +96,10 @@ flowchart LR
 ### 3.4 Power
 - Single source: header **5 V** (pins 2 & 4). Header **3V3** is *not* used as a
   supply (the Pi's 3V3 LDO can't source the radio/GNSS load) — only as a logic
-  reference if needed.
-- **Buck-boost** 5 V → **VPA** for the E21 (holds regulation while the USB-fed
-  5 V sags during TX), plus **bulk capacitance** for the ~0.6–0.8 A TX bursts.
-- A separate **3V3** buck/LDO feeds the MM8108 I/O domain and the NEO-M9N.
+  reference + ID-EEPROM supply.
+- A single **3V3** buck (through an inrush soft-start switch) feeds the radio
+  module, the NEO-M9N, and the RTC, with **bulk capacitance** at the module for the
+  TX burst. No PA buck-boost / `VPA` rail (the module integrates its PA).
 - Full tree and budget in [`POWER.md`](POWER.md).
 
 ### 3.5 HAT identity

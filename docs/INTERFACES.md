@@ -15,12 +15,12 @@ the Pi Zero 2 W male header. BCM = Broadcom GPIO number.
 | Phys | Name / BCM        | HAT net            | Used by        | Notes |
 |-----:|-------------------|--------------------|----------------|-------|
 | 1    | 3V3               | `3V3_PI` (ref)     | —              | Reference only; not a HAT supply |
-| 2    | 5V                | `+5V`              | Power in       | PA + regulators main input |
+| 2    | 5V                | `+5V`              | Power in       | 3V3 regulator main input |
 | 3    | GPIO2 / SDA1      | `GNSS_SDA`         | NEO-M9N        | I²C (alt control bus) |
 | 4    | 5V                | `+5V`              | Power in       | Parallel 5 V feed |
 | 5    | GPIO3 / SCL1      | `GNSS_SCL`         | NEO-M9N        | I²C (alt control bus) |
 | 6    | GND               | `GND`              | —              | |
-| 7    | GPIO4             | `FEM_TXEN_FB`      | E21 (fallback) | DNP Pi-driven TX enable* |
+| 7    | GPIO4             | `SPARE4`           | spare          | (E21 T/R retired) |
 | 8    | GPIO14 / TXD0     | `GNSS_RXD`         | NEO-M9N        | Pi TX → GNSS RX |
 | 9    | GND               | `GND`              | —              | |
 | 10   | GPIO15 / RXD0     | `GNSS_TXD`         | NEO-M9N        | GNSS TX → Pi RX |
@@ -44,9 +44,9 @@ the Pi Zero 2 W male header. BCM = Broadcom GPIO number.
 | 28   | ID_SC / GPIO1     | `ID_SC`            | ID EEPROM      | HAT EEPROM clock (reserved) |
 | 29   | **GPIO5**         | `MM_IRQ`           | **MM8108**     | **OpenMANET spi-irq-gpios** (IRQ/BUSY) |
 | 30   | GND               | `GND`              | —              | |
-| 31   | GPIO6             | `FEM_RXEN_FB`      | E21 (fallback) | DNP Pi-driven RX enable* |
-| 32   | GPIO12            | `SPARE12`          | spare          | (PWM-capable) |
-| 33   | GPIO13            | `SPARE13`          | spare          | (PWM-capable) |
+| 31   | GPIO6             | `SPARE6`           | spare          | (E21 T/R retired) |
+| 32   | GPIO12            | `LED_FIX`          | status LED     | GNSS-fix LED (host-driven, PWM-capable) |
+| 33   | GPIO13            | `LED_TX`           | status LED     | TX-activity LED (host-driven, PWM-capable) |
 | 34   | GND               | `GND`              | —              | |
 | 35   | GPIO19            | `SPARE19`          | spare          | |
 | 36   | GPIO16            | `SPARE16`          | spare          | |
@@ -55,12 +55,9 @@ the Pi Zero 2 W male header. BCM = Broadcom GPIO number.
 | 39   | GND               | `GND`              | —              | |
 | 40   | GPIO21            | `SPARE21`          | spare          | |
 
-\* **FEM control fallback** — `FEM_TXEN_FB` / `FEM_RXEN_FB` are *DNP 0 Ω-option*
-links so the Pi can drive the E21 T/R switch during bring-up. For real over-the-air
-timing the E21 **must** be switched by the MM8108's hardware FEM-control outputs
-(µs-scale), **not** Pi GPIO. Default = MM8108 drives; leave the fallback links
-unpopulated. See [`RF.md`](RF.md). These pins are intentionally kept off the
-OpenMANET-claimed GPIOs so they don't collide with the stock overlay.
+> The integrated MM8108 module (M20 / MF15457) handles its own TX/RX switching, so
+> there are **no FEM T/R lines** on the header anymore — GPIO4/6 revert to spares
+> and GPIO12/13 drive the status LEDs. (External E21 retired — B11.)
 
 ## 2. Bus summary
 
@@ -87,13 +84,10 @@ OpenMANET-claimed GPIOs so they don't collide with the stock overlay.
 
 | Net        | From            | To              | Notes |
 |------------|-----------------|-----------------|-------|
-| `RF_900`   | MM8108 RF (FEM) | E21 RFI (xcvr)  | 50 Ω controlled impedance, short |
-| `ANT_900`  | E21 RFO (ant)   | U.FL #2         | 50 Ω, board edge |
-| `FEM_TX`   | MM8108 FEM ctrl | E21 TXEN        | radio-driven T/R |
-| `FEM_RX`   | MM8108 FEM ctrl | E21 RXEN        | radio-driven T/R |
+| `RF_900`   | module `ANT`    | C35 DC-block    | 50 Ω controlled impedance, short |
+| `ANT_900`  | C35 (→[FL2 DNP])| U.FL #2         | 50 Ω, board edge; ESD clamp |
 | `RF_GNSS`  | U.FL #1         | NEO-M9N RF_IN   | 50 Ω; optional antenna bias |
-| `VPA`      | Buck-boost out  | E21 VCC         | regulated PA rail + bulk |
-| `+3V3`     | 3V3 reg out     | MM8108 / NEO-M9N| radio + GNSS digital |
+| `+3V3`     | 3V3 reg out     | radio / NEO-M9N | radio + GNSS digital (no VPA rail) |
 
 Machine-readable version: [`../hardware/netlist/connections.csv`](../hardware/netlist/connections.csv).
 
