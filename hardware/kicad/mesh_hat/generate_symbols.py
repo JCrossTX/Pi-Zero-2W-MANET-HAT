@@ -8,7 +8,7 @@ Pins are laid out in numeric order, left column then right column.
 """
 import os
 
-VER = 20250114
+VER = 20260206   # KiCad 10 (matches the project's footprint-lib version)
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "ZERO2W_MeshHat.kicad_sym")
 
@@ -95,7 +95,7 @@ def main():
     out = ["(kicad_symbol_lib",
            f"\t(version {VER})",
            '\t(generator "kicad_symbol_editor")',
-           '\t(generator_version "9.0")']
+           '\t(generator_version "10.0")']
     out.append(symbol("MM8108-MF15457", "MM8108-MF15457",
                       "cm4mesh:Morse_MM8108-MF15457_LGA38_11x10", MM8108))
     out.append(symbol("NEO-M9N-00B", "NEO-M9N-00B",
