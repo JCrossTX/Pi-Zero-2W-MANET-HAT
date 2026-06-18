@@ -1,0 +1,48 @@
+# ZERO 2W MESH HAT - generated net report
+
+46 added parts, 44 new nets, 159 labels, 30 no-connects.
+
+- **+3V3** : U6.1, U8.3, L1.2, FB1.1, R3.1, C4.1, R14.1
+- **+3V3_GNSS** : U3.22, U3.23, FB1.2, C9.1, C10.1, R11.2, R12.2, R13.2
+- **+3V3_RAD** : U2.10, U2.22, U2.24, U6.6, C5.1, C6.1, C7.1, C8.1, R9.2, R10.2
+- **+5V** : U5.1, U5.3, U7.4, U7.5, U9.5, J7.1, D1.1
+- **+5V_SW** : U4.2, U4.3, U5.6, C3.1
+- **BUCK_BST** : U4.6, C2.1
+- **BUCK_FB** : U4.1, R3.2, R4.1
+- **BUCK_SW** : U4.5, L1.1, C2.2
+- **GND** : U2.1, U2.3, U2.11, U2.20, U2.23, U2.26, U2.30, U2.38, U3.10, U3.12, U3.13, U3.24, U4.4, U5.2, U6.2, U7.2, U8.1, U9.2, J2.2, J3.2, J6.A1, J6.A12, J6.B1, J6.B12, J6.SH, J7.5, J7.SH, D1.2, D2.2, D3.2, D4.1, D5.1, D6.1, R4.2, C3.2, C4.2, R5.2, R6.2, R7.2, R8.2, C5.2, C6.2, C7.2, C8.2, C9.2, C10.2, C11.2
+- **GPIO10{slash}SPI0.MOSI** : U2.16
+- **GPIO11{slash}SPI0.SCLK** : U2.17
+- **GPIO12{slash}PWM0** : R15.1
+- **GPIO13{slash}PWM1** : R16.1
+- **GPIO14{slash}TXD0** : U3.21
+- **GPIO15{slash}RXD0** : U3.20
+- **GPIO17** : U2.4, U8.2, R9.1
+- **GPIO18{slash}PCM.CLK** : U3.3
+- **GPIO22** : U3.4
+- **GPIO23** : U6.3
+- **GPIO24** : U2.5
+- **GPIO25** : U2.29
+- **GPIO27** : U3.8, R13.1
+- **GPIO2{slash}SDA1** : U3.18
+- **GPIO3{slash}SCL1** : U3.19
+- **GPIO5** : U2.14
+- **GPIO8{slash}SPI0.CE0** : U2.13
+- **GPIO9{slash}SPI0.MISO** : U2.12
+- **LED_FIX_A** : D5.2, R15.2
+- **LED_PWR_A** : D4.2, R14.2
+- **LED_TX_A** : D6.2, R16.2
+- **MM_D2** : U2.15, R10.1
+- **NEO_DSEL** : U3.2, R12.1
+- **NEO_RFIN** : U3.11, C12.1
+- **NEO_SAFE** : U3.1, R11.1
+- **NEO_VCCRF** : U3.9, L2.1, C11.1
+- **RF_900** : U2.2, J2.1, D2.1
+- **RF_GNSS** : J3.1, D3.1, L2.2, C12.2
+- **U5_ILIM** : U5.4, R5.1
+- **U6_ILIM** : U6.4, R6.1
+- **USBC_CC1** : J6.A5, R7.1
+- **USBC_CC2** : J6.B5, R8.1
+- **USB_DM** : U9.3, U9.4, J6.A7, J6.B7, J7.2
+- **USB_DP** : U9.1, U9.6, J6.A6, J6.B6, J7.3
+- **VBUS_USB** : U7.1, J6.A4, J6.A9, J6.B4, J6.B9
