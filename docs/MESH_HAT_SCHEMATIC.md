@@ -38,6 +38,7 @@ the labels).
 | L2 | 27–68 nH GNSS RF bias | `Inductor_SMD:L_0402_1005Metric` |
 | FB1 | 600 Ω ferrite (GNSS) | `Inductor_SMD:L_0603_1608Metric` |
 | MH1–4 | M2.5 mounting | `MountingHole:MountingHole_2.7mm_M2.5` |
+| SH1,SH2 | RF shield frames (DNP) → GND | `RF_Shielding:*` (see grounding doc) |
 
 ## Nets
 `+5V` `+5V_SW` `VBUS_C` `+3V3` `+3V3_RAD` `+3V3_GNSS` `3V3_PI` `GND`

@@ -29,6 +29,8 @@ R/C default = **0402**; bump to 0603 if you prefer hand-soldering (same library,
 | J7 | USB Micro-B (GCT USB3076) | `Connector_USB:USB_Micro-B_GCT_USB3076-30-A` |
 | JP1 | EEPROM WP jumper | `Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical` |
 | MH1–MH4 | M2.5 mount (×4) | `MountingHole:MountingHole_2.7mm_M2.5` |
+| SH1 | GNSS RF shield frame — **DNP** | `RF_Shielding:Wuerth_36103205_20x20mm` |
+| SH2 | MM8108 RF shield frame — **DNP** (module pre-shielded) | `RF_Shielding:Laird_Technologies_BMI-S-209-F_29.36x18.50mm` |
 
 ## Diodes / LEDs
 | Ref | Value / Part | Footprint |
@@ -130,4 +132,8 @@ R/C default = **0402**; bump to 0603 if you prefer hand-soldering (same library,
 | `Diode_SMD:D_SMA` / `D_SOD-323` | 1 / 2 |
 | `LED_SMD:LED_0603_1608Metric` | 3 |
 | `MountingHole:MountingHole_2.7mm_M2.5` | 4 |
+| `RF_Shielding:*` shield frames (DNP) | 2 |
 | Crystals | 0 |
+
+> Shields SH1/SH2 are **DNP** by default (see
+> [`MESH_HAT_GROUNDING.md`](MESH_HAT_GROUNDING.md) §3); each frame pin ties to `GND`.

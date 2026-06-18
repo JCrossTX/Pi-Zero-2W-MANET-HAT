@@ -74,13 +74,14 @@ BLOCKS = [
      "J6 CC1->56k->VBUS_C  CC2->56k->VBUS_C (Rp host)\\n"
      "U11 FPF2123: IN=+5V OUT=VBUS_C EN=on ILIM~0.5-1A\\n"
      "Pi: dtoverlay=dwc2,dr_mode=host ; OTG cable"),
-    ("U6  24LC32 ID EEPROM  +  LEDs",
+    ("U6  24LC32 ID EEPROM  +  LEDs  +  SHIELDS",
      "U6 VCC=3V3_PI  GND  SDA=ID_SD(J1.27) SCL=ID_SC(J1.28)\\n"
      "   A0/A1/A2=GND  WP=10k UP 3V3_PI + JP->GND\\n"
      "   2x 3.9k pulls SDA/SCL -> 3V3_PI\\n"
      "D_PWR <- +3V3 (1k)\\n"
      "D_FIX <- LED_FIX (J1.32/GPIO12) (1k)\\n"
-     "D_TX  <- LED_TX  (J1.33/GPIO13) (1k)"),
+     "D_TX  <- LED_TX  (J1.33/GPIO13) (1k)\\n"
+     "SH1 (GNSS) / SH2 (MM8108) frames -> GND  [DNP]"),
     ("J1  Pi 40-pin header (key pins)",
      "1,17 3V3_PI   2,4 +5V   GND:6/9/14/20/25/30/34/39\\n"
      "SPI0: 19 MOSI 21 MISO 23 SCLK 24 CE0/CS\\n"
